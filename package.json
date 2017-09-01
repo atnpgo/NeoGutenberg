@@ -1,25 +1,28 @@
 {
-  "name": "NeoGutenberg",
-  "version": "0.1.0",
-  "description": "A digital printing press",
-  "main": "main.js",
-  "scripts": {
-    "start": "electron main.js"
-  },
-  "repository": "https://github.com/atnpgo/NeoGutenberg",
-  "keywords": [
-    "epub",
-    "mobi",
-    "ebook",
-    "print",
-    "printing"
-  ],
-  "author": "ATNPGO",
-  "license": "Apache-2.0",
-  "devDependencies": {
-    "electron": "~1.6.2",
-    "epub-gen": "~0.0.17",
-    "showdown": "~1.7.3",
-    "kindlegen": "~1.1.0"
-  }
+    "name": "NeoGutenberg",
+    "version": "0.1.0",
+    "description": "A digital printing press",
+    "main": "main.js",
+    "scripts": {
+        "start": "electron ."
+    },
+    "repository": "https://github.com/atnpgo/NeoGutenberg",
+    "keywords": [
+        "epub",
+        "mobi",
+        "ebook",
+        "print",
+        "printing"
+    ],
+    "author": "ATNPGO",
+    "license": "Apache-2.0",
+    "devDependencies": {
+        "electron": "~1.7.5"
+    },
+    "dependencies": {
+        "epub-gen": "0.0.16",
+        "showdown": "~1.7.3",
+        "kindlegen": "~1.1.0",
+        "node-sass": "4.5.3"
+    }
 }
