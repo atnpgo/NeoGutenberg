@@ -1,3 +1,15 @@
+/* 
+ *  _____/\\\\\\\\\_____/\\\\\\\\\\\\\\\__/\\\\\_____/\\\__/\\\\\\\\\\\\\_______/\\\\\\\\\\\\_______/\\\\\______        
+ *   ___/\\\\\\\\\\\\\__\///////\\\/////__\/\\\\\\___\/\\\_\/\\\/////////\\\___/\\\//////////______/\\\///\\\____       
+ *    __/\\\/////////\\\_______\/\\\_______\/\\\/\\\__\/\\\_\/\\\_______\/\\\__/\\\_______________/\\\/__\///\\\__      
+ *     _\/\\\_______\/\\\_______\/\\\_______\/\\\//\\\_\/\\\_\/\\\\\\\\\\\\\/__\/\\\____/\\\\\\\__/\\\______\//\\\_     
+ *      _\/\\\\\\\\\\\\\\\_______\/\\\_______\/\\\\//\\\\/\\\_\/\\\/////////____\/\\\___\/////\\\_\/\\\_______\/\\\_    
+ *       _\/\\\/////////\\\_______\/\\\_______\/\\\_\//\\\/\\\_\/\\\_____________\/\\\_______\/\\\_\//\\\______/\\\__   
+ *        _\/\\\_______\/\\\_______\/\\\_______\/\\\__\//\\\\\\_\/\\\_____________\/\\\_______\/\\\__\///\\\__/\\\____  
+ *         _\/\\\_______\/\\\_______\/\\\_______\/\\\___\//\\\\\_\/\\\_____________\//\\\\\\\\\\\\/_____\///\\\\\/_____ 
+ *          _\///________\///________\///________\///_____\/////__\///_______________\////////////_________\/////_______
+ */
+
 /* global __dirname */
 
 const electron = require('electron');
@@ -35,8 +47,13 @@ const neogut = {
         // Create the browser window.
         neogut.mainWindow = new BrowserWindow({
             width: 800,
-            height: 600
+            height: 600,
+            'min-width': 800,
+            'min-height': 600,
+            'accept-first-mouse': true
         });
+        
+        neogut.mainWindow.setMenu(null);
 
         // and load the index.html of the app.
         neogut.mainWindow.loadURL(url.format({
@@ -102,6 +119,15 @@ const neogut = {
 
 
         });
+    },
+    listBooks: (callback) => {
+        const books = [];
+        fs.readdir(neogut.basePath, (err, files) => {
+            files.forEach((f) => {
+                books.push(f);
+            });
+            callback(books);
+        });
     }
 };
 
@@ -122,7 +148,8 @@ app.on('activate', () => {
     }
 });
 
-exports.test = neogut.generateBook;
+exports.generateBook = neogut.generateBook;
+exports.listBooks = neogut.listBooks;
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
