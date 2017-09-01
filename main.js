@@ -42,15 +42,18 @@ const neogut = {
      * @returns {undefined}
      */
     createWindow: () => {
-
         neogut.basePath = path.join(app.getPath('documents'), 'NeoGutenberg');
+        if (!fs.existsSync(neogut.basePath)) {
+            fs.mkdirSync(neogut.basePath);
+        }
         // Create the browser window.
         neogut.mainWindow = new BrowserWindow({
             width: 800,
             height: 600,
             'min-width': 800,
             'min-height': 600,
-            'accept-first-mouse': true
+            'accept-first-mouse': true,
+            'title-bar-style': 'hidden'
         });
         neogut.mainWindow.maximize();
 
@@ -142,6 +145,12 @@ const neogut = {
             });
             callback(chapters);
         });
+    },
+    getChapter: (book, chapter, callback) => {
+        console.log(path.join(path.join(neogut.basePath, book), chapter));
+        fs.readFile(path.join(path.join(neogut.basePath, book), chapter), 'UTF-8', (err, contents) => {
+            callback(contents);
+        });
     }
 };
 
@@ -165,6 +174,4 @@ app.on('activate', () => {
 exports.generateBook = neogut.generateBook;
 exports.listBooks = neogut.listBooks;
 exports.listChapters = neogut.listChapters;
-
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.
+exports.getChapter = neogut.getChapter;

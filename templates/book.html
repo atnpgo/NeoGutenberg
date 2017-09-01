@@ -1,9 +1,10 @@
 <nav class="nav-group">
-    <h5 class="nav-group-title">{{book}}</h5>
+    <h5 class="nav-group-title">{{book}} <span data-book="{{book}}" class="icon icon-dot-3 pull-right more"></span></h5>
     {{#each chapters}}
-    <span class="nav-group-item">
+    <span class="nav-group-item chapter" data-book="{{../book}}" data-chapter="{{this}}">
         <span class="icon icon-book"></span>
         {{this}}
+        <span class="icon icon-dot-3 pull-right more"></span>
     </span>
     {{/each}}
 </nav>

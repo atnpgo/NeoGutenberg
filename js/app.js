@@ -8,23 +8,36 @@
  *        _\/\\\_______\/\\\_______\/\\\_______\/\\\__\//\\\\\\_\/\\\_____________\/\\\_______\/\\\__\///\\\__/\\\____  
  *         _\/\\\_______\/\\\_______\/\\\_______\/\\\___\//\\\\\_\/\\\_____________\//\\\\\\\\\\\\/_____\///\\\\\/_____ 
  *          _\///________\///________\///________\///_____\/////__\///_______________\////////////_________\/////_______
- *   © Oproma inc. All rights reserved.
  */
 
+
+/* global Promise */
 
 const remote = require('electron').remote;
 const mainProcess = remote.require('./main.js');
 
 $(document).ready(() => {
-    neogut.bindBooks();
+    neogut.buildApp();
 });
 
 window.neogut = {
     state: {
         openedFiles: []
     },
-    loadExtTemplate: (path, callback) => {
-        const loadSingleTemplate = (p, internalCallback) => {
+    showdown: new showdown.Converter({
+        strikethrough: true,
+        tables: true
+    }),
+
+    editor: null,
+    /**
+     * Loads an external template, passing it to the callback function.
+     * @param {array|string} path The name/path to the template, can ommit leading "template/" and trailing ".html"
+     * @param {function} callback
+     * @returns {undefined}
+     */
+    loadExtTemplate: (path) => {
+        const loadSingleTemplate = (p, callback) => {
             if (!p.startsWith('templates/')) {
                 p = 'templates/' + p;
             }
@@ -34,7 +47,7 @@ window.neogut = {
             }
             const scriptId = p.replace(/\./g, "-").replace(/\//g, "-");
             if ($('#' + scriptId).length > 0) {
-                internalCallback($('#' + scriptId).html());
+                callback($('#' + scriptId).html());
                 return;
             }
             $.get({
@@ -45,54 +58,187 @@ window.neogut = {
                     script.innerHTML = templateData;
                     script.type = "text/x-handlebars-template";
                     document.head.appendChild(script);
-                    internalCallback(templateData);
+                    callback(templateData);
                 }
             });
         };
+        const promises = [];
+
         if (_.isString(path)) {
-            loadSingleTemplate(path, (template) => {
-                callback(template);
-            });
+            promises.push(new Promise((resolve) => {
+                loadSingleTemplate(path, (template) => {
+                    resolve(Handlebars.compile(template));
+                });
+            }));
         } else if (_.isArray(path)) {
-            var promises = [];
             path.forEach((p) => {
                 promises.push(new Promise((resolve) => {
                     loadSingleTemplate(p, (template) => {
-                        resolve(template);
+                        resolve(Handlebars.compile(template));
                     });
                 }));
             });
-            Promise.all(promises).then((templates) => {
-                callback.apply(this, templates);
+        }
+        return Promise.all(promises);
+    },
+    /**
+     * Pulls the list of books and binds them to the UI.
+     * @returns {Promise} 
+     */
+    bindAllBooks: () => {
+        return new Promise((resolve) => {
+            neogut.loadExtTemplate(['book']).then((templates) => {
+                const promises = [];
+                mainProcess.listBooks((books) => {
+                    books.forEach((book) => {
+                        promises.push(new Promise((resolve) => {
+                            mainProcess.listChapters(book, (chapters) => {
+                                resolve({
+                                    book,
+                                    chapters
+                                });
+                            });
+                        }));
+                        const $sidebar = $('.sidebar').empty();
+                        Promise.all(promises).then((values) => {
+                            values.forEach((value) => {
+                                $sidebar.append(templates[0](value));
+                            });
+                            resolve();
+                        });
+                    });
+                });
+
+            });
+        });
+    },
+
+    getOpenedChapter: (book, chapter) => {
+        for (let i = 0; i < neogut.state.openedFiles.length; i++) {
+            if (neogut.state.openedFiles[i].book === book && neogut.state.openedFiles[i].chapter === chapter) {
+                return neogut.state.openedFiles[i];
+            }
+        }
+        return null;
+    },
+
+    openChapter: (book, chapter) => {
+        if (neogut.getOpenedChapter(book, chapter) === null) {
+            neogut.state.openedFiles.push({book, chapter});
+            return new Promise((resolve) => {
+                neogut.loadExtTemplate('tab').then((templates) => {
+                    $('.tab-group').append(templates[0]({book, chapter}));
+                    neogut.bindEvents();
+                    neogut.showChapterEditor(book, chapter).then(resolve);
+                });
+            });
+        } else {
+            return new Promise((resolve) => {
+                neogut.showChapterEditor(book, chapter).then(resolve);
             });
         }
     },
-    bindBooks: () => {
-        neogut.loadExtTemplate(['book'], (bookerT) => {
-            bookerT = Handlebars.compile(bookerT);
-            const promises = [];
-            mainProcess.listBooks((books) => {
-                books.forEach((book) => {
-                    promises.push(new Promise((resolve) => {
-                        mainProcess.listChapters(book, (chapters) => {
-                            resolve({
-                                book,
-                                chapters
-                            });
-                        });
-                    }));
-                    const $sidebar = $('.sidebar');
-                    Promise.all(promises).then((values) => {
-                        values.forEach((value) => {
-                            $sidebar.append(bookerT(value));
-                        });
-                    });
 
+    closeChapter: (book, chapter) => {
+        return new Promise((resolve) => {
+            let prev = null;
+            for (let i = 0; i < neogut.state.openedFiles.length; i++) {
+                if (neogut.state.openedFiles[i].book === book && neogut.state.openedFiles[i].chapter === chapter) {
+                    neogut.state.openedFiles.splice(i, 1);
+                    break;
+                }
+                prev = neogut.state.openedFiles[i];
+            }
+            $('.tab-item[data-book="' + book + '"][data-chapter="' + chapter + '"]').remove();
 
+            if (neogut.state.openedFiles.length > 0) {
+                if (prev === null) {
+                    prev = neogut.state.openedFiles[0];
+                }
+                neogut.showChapterEditor(prev.book, prev.chapter);
+            } else {
+                neogut.editor = null;
+                resolve();
+            }
+        });
+    },
+    showChapterEditor: (book, chapter) => {
+        return new Promise((resolve) => {
+            $('.tab-item').removeClass('active');
+            $('.tab-item[data-book="' + book + '"][data-chapter="' + chapter + '"]').addClass('active');
+            const $editorContainer = $('#editor-container').empty();
+            neogut.loadExtTemplate('editor').then((templates) => {
+                $editorContainer.append(templates[0]());
+            });
 
-                });
+            mainProcess.getChapter(book, chapter, (contents) => {
+                $('#html-preview').html(neogut.showdown.makeHtml(contents));
+
+                neogut.editor = ace.edit("md-editor");
+                //neogut.editor.setTheme("ace/theme/monokai");
+                var MdMode = ace.require("ace/mode/markdown").Mode;
+                neogut.editor.session.setMode(new MdMode());
+                neogut.editor.setValue(contents, -1);
+
+                neogut.bindEvents();
+                resolve();
             });
 
         });
+    },
+    bindGlobalEvents: () => {
+        $(document).keydown((e) => {
+            if (e.ctrlKey && e.which === 87 /* w */) {
+                const $tab = $('.tab-item.active');
+                neogut.closeChapter($tab.data('book'), chapter = $tab.data('chapter'));
+            }
+        });
+        neogut.bindEvents();
+    },
+    bindEvents: () => {
+        $('.chapter').off('click').on('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const $this = $(e.currentTarget), book = $this.data('book'), chapter = $this.data('chapter');
+            neogut.openChapter(book, chapter);
+        });
+        $('.chapter > .more').off('click').on('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const $this = $(e.currentTarget).parent(), book = $this.data('book'), chapter = $this.data('chapter');
+            alert('TODO: Show settings for ' + book + ' - ' + chapter);
+        });
+        $('.tab-item').off('click').on('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const $this = $(e.currentTarget), book = $this.data('book'), chapter = $this.data('chapter');
+            neogut.showChapterEditor(book, chapter);
+        });
+        $('.tab-item > .close').off('click').on('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const $parent = $(e.currentTarget).parent(), book = $parent.data('book'), chapter = $parent.data('chapter');
+            neogut.closeChapter(book, chapter);
+        });
+        $('.nav-group-title > .more').off('click').on('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const $this = $(e.currentTarget), book = $this.data('book');
+            alert('TODO: Show settings for ' + book);
+        });
+
+        if (neogut.editor) {
+            neogut.editor.off('input');
+            neogut.editor.on('input', () => {
+                $('#html-preview').html(neogut.showdown.makeHtml(neogut.editor.getValue()));
+            });
+        }
+    },
+    /**
+     * Builds the current state of the app
+     * @returns {undefined}
+     */
+    buildApp: () => {
+        neogut.bindAllBooks().then(neogut.bindGlobalEvents);
     }
 };

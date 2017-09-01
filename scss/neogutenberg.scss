@@ -19,7 +19,7 @@
     src: url("../fonts/OpenSans-Regular.ttf");
 }
 
-$font-family-default: 'Open Sans', "Helvetica Neue", Helvetica, "Segoe UI", sans-serif;
+$font-family-default: 'Open Sans', sans-serif;
 
 // Variables
 @import "photon-0.1.2-alpha/_variables.scss";
@@ -45,3 +45,43 @@ $font-family-default: 'Open Sans', "Helvetica Neue", Helvetica, "Segoe UI", sans
 @import "photon-0.1.2-alpha/_tables.scss";
 @import "photon-0.1.2-alpha/_tabs.scss";
 
+
+.nav-group-title,.nav-group-item {
+    & > .more {
+        opacity: 0;
+        transition: opacity .1s linear;
+        cursor: pointer;
+        font-size: 12px;
+        padding: {
+            left: 4px;
+            right: 4px;
+        }
+        border-radius: 3px;
+        &:hover {
+            background-color: rgba(0,0,0,.08);
+        }
+    }
+    &:hover {
+        & > .more {
+            opacity: 1;
+        }
+    }
+}
+
+.nav-group-title,.nav-group-item {
+    & > .more {
+        margin-top: 3px;
+    }
+}
+
+
+#editor-container {
+    display: flex;
+    height: calc(100% - 30px);
+    & > div {
+        width: 50%;
+        &.preview-container {
+            overflow: auto;
+        }
+    }
+}
