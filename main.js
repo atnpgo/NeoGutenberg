@@ -52,7 +52,8 @@ const neogut = {
             'min-height': 600,
             'accept-first-mouse': true
         });
-        
+        neogut.mainWindow.maximize();
+
         neogut.mainWindow.setMenu(null);
 
         // and load the index.html of the app.
@@ -63,7 +64,7 @@ const neogut = {
         }));
 
         // Open the DevTools.
-        neogut.mainWindow.webContents.openDevTools()
+        neogut.mainWindow.webContents.openDevTools({mode: 'detach'})
 
         // Emitted when the window is closed.
         neogut.mainWindow.on('closed', () => {
@@ -128,6 +129,19 @@ const neogut = {
             });
             callback(books);
         });
+    },
+    listChapters: (book, callback) => {
+        const chapters = [];
+        const bookPath = path.join(neogut.basePath, book);
+        fs.readdir(bookPath, (err, files) => {
+            files.forEach((f) => {
+                const chapterPath = path.join(bookPath, f);
+                if (!fs.lstatSync(chapterPath).isDirectory() && !path.basename(chapterPath).startsWith('_')) {
+                    chapters.push(f);
+                }
+            });
+            callback(chapters);
+        });
     }
 };
 
@@ -150,6 +164,7 @@ app.on('activate', () => {
 
 exports.generateBook = neogut.generateBook;
 exports.listBooks = neogut.listBooks;
+exports.listChapters = neogut.listChapters;
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
