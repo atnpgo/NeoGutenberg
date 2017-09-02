@@ -30,6 +30,7 @@ window.neogut = {
     }),
 
     editor: null,
+    markdown: null,
     /**
      * Loads an external template, passing it to the callback function.
      * @param {array|string} path The name/path to the template, can ommit leading "template/" and trailing ".html"
@@ -158,39 +159,85 @@ window.neogut = {
                 neogut.showChapterEditor(prev.book, prev.chapter);
             } else {
                 neogut.editor = null;
+                $('#editor-container').empty();
                 resolve();
             }
         });
+    },
+    saveChapter: (book, chapter) => {
+        if (neogut.editor) {
+            neogut.editor.off('input');
+            neogut.editor.on('input', () => {
+                $('#html-preview').html(neogut.showdown.makeHtml(neogut.editor.getValue()));
+            });
+            return new Promise((resolve) => {
+                mainProcess.saveChapter(book, chapter, neogut.getOpenedChapter(book, chapter).markdown, (err) => {
+                    if (err) {
+                        console.error(err);
+                    }
+                    $('.tab-item[data-book="' + book + '"][data-chapter="' + chapter + '"]').removeClass('has-changes');
+                    resolve();
+                });
+            });
+        } else {
+            return Promise.resolve();
+        }
     },
     showChapterEditor: (book, chapter) => {
         return new Promise((resolve) => {
             $('.tab-item').removeClass('active');
             $('.tab-item[data-book="' + book + '"][data-chapter="' + chapter + '"]').addClass('active');
-            const $editorContainer = $('#editor-container').empty();
+            const $editorContainer = $('#editor-container').empty(), opened = neogut.getOpenedChapter(book, chapter);
             neogut.loadExtTemplate('editor').then((templates) => {
                 $editorContainer.append(templates[0]());
-            });
 
-            mainProcess.getChapter(book, chapter, (contents) => {
-                $('#html-preview').html(neogut.showdown.makeHtml(contents));
+                const process = (contents) => {
+                    $('#html-preview').html(neogut.showdown.makeHtml(contents));
 
-                neogut.editor = ace.edit("md-editor");
-                //neogut.editor.setTheme("ace/theme/monokai");
-                var MdMode = ace.require("ace/mode/markdown").Mode;
-                neogut.editor.session.setMode(new MdMode());
-                neogut.editor.setValue(contents, -1);
+                    neogut.editor = ace.edit("md-editor");
+                    neogut.editor.$blockScrolling = Infinity;
+                    //neogut.editor.setTheme("ace/theme/monokai");
+                    var MdMode = ace.require("ace/mode/markdown").Mode;
+                    neogut.editor.session.setMode(new MdMode());
+                    neogut.editor.setValue(contents, -1);
+                    neogut.getOpenedChapter(book, chapter).markdown = contents;
+                    neogut.bindEvents();
+                    resolve();
+                };
 
-                neogut.bindEvents();
-                resolve();
+                if (opened && opened.markdown) {
+                    process(opened.markdown);
+                } else {
+                    mainProcess.getChapter(book, chapter, process);
+                }
+
             });
 
         });
     },
     bindGlobalEvents: () => {
         $(document).keydown((e) => {
-            if (e.ctrlKey && e.which === 87 /* w */) {
-                const $tab = $('.tab-item.active');
-                neogut.closeChapter($tab.data('book'), chapter = $tab.data('chapter'));
+            if (e.ctrlKey) {
+                const $tab = $('.tab-item.active'), book = $tab.data('book'), chapter = $tab.data('chapter');
+                switch (e.which) {
+                    case 87 /* W */ :
+                        neogut.closeChapter(book, chapter);
+                        break;
+                    case 83 /* S */ :
+                        if (e.shiftKey) {
+                            neogut.state.openedFiles.forEach((file) => {
+                                neogut.saveChapter(file.book, file.chapter);
+                            });
+                        } else {
+                            neogut.saveChapter(book, chapter);
+                        }
+                        break;
+                    case 123 /* F12 */ :
+                        if (e.shiftKey) {
+                            mainProcess.openDevTool();
+                        }
+                        break;
+                }
             }
         });
         neogut.bindEvents();
@@ -230,7 +277,15 @@ window.neogut = {
         if (neogut.editor) {
             neogut.editor.off('input');
             neogut.editor.on('input', () => {
-                $('#html-preview').html(neogut.showdown.makeHtml(neogut.editor.getValue()));
+                const markdown = neogut.editor.getValue();
+                $('#html-preview').html(neogut.showdown.makeHtml(markdown));
+                const $activeTab = $('.tab-item.active'), book = $activeTab.data('book'), chapter = $activeTab.data('chapter'),
+                        opened = neogut.getOpenedChapter(book, chapter);
+
+                if (opened.markdown !== null && opened.markdown !== markdown) {
+                    $activeTab.addClass('has-changes');
+                }
+                opened.markdown = markdown;
             });
         }
     },

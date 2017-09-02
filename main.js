@@ -66,9 +66,6 @@ const neogut = {
             slashes: true
         }));
 
-        // Open the DevTools.
-        neogut.mainWindow.webContents.openDevTools({mode: 'detach'})
-
         // Emitted when the window is closed.
         neogut.mainWindow.on('closed', () => {
             // when you should delete the corresponding element.
@@ -147,9 +144,17 @@ const neogut = {
         });
     },
     getChapter: (book, chapter, callback) => {
-        console.log(path.join(path.join(neogut.basePath, book), chapter));
         fs.readFile(path.join(path.join(neogut.basePath, book), chapter), 'UTF-8', (err, contents) => {
             callback(contents);
+        });
+    },
+    saveChapter: (book, chapter, contents, callback) => {
+        fs.writeFile(path.join(path.join(neogut.basePath, book), chapter), contents, 'UTF-8', (err) => {
+            if (err) {
+                callback(err);
+            } else {
+                callback(null);
+            }
         });
     }
 };
@@ -175,3 +180,12 @@ exports.generateBook = neogut.generateBook;
 exports.listBooks = neogut.listBooks;
 exports.listChapters = neogut.listChapters;
 exports.getChapter = neogut.getChapter;
+exports.saveChapter = neogut.saveChapter;
+
+
+
+
+
+exports.openDevTool = () => {
+    neogut.mainWindow.webContents.openDevTools({mode: 'detach'});
+};
