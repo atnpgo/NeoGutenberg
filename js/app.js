@@ -17,25 +17,38 @@ const remote = require('electron').remote;
 const mainProcess = remote.require('./main.js');
 
 $(document).ready(() => {
-    neogut.buildApp();
+    $('[data-toggle="tooltip"]').tooltip();
+    neogut.bindAllBooks().then(neogut.bindGlobalEvents);
 });
 
+/**
+ * App namespace
+ * @type neogut
+ */
 window.neogut = {
-    state: {
-        openedFiles: []
-    },
+    /**
+     * The list of opened files.
+     * @type Array
+     */
+    openedFiles: [],
+    /**
+     * The showdown converter used for html previews.
+     * @type showdown.Converter
+     */
     showdown: new showdown.Converter({
         strikethrough: true,
         tables: true
     }),
-
+    /**
+     * Instance of the ace editor, if instanciated.
+     * @type Ace.Editor
+     */
     editor: null,
-    markdown: null,
     /**
      * Loads an external template, passing it to the callback function.
      * @param {array|string} path The name/path to the template, can ommit leading "template/" and trailing ".html"
-     * @param {function} callback
-     * @returns {undefined}
+     * @returns {Promise} A future resolved once the templates have been loaded and compiled. The value passed is an array 
+     * of Handlebars templates, even if a single string was passed.
      */
     loadExtTemplate: (path) => {
         const loadSingleTemplate = (p, callback) => {
@@ -83,53 +96,95 @@ window.neogut = {
         return Promise.all(promises);
     },
     /**
+     * Pulls the template for, instanciates and returns an instace of the named modal.
+     * @param {type} data The data to bind to the modal.
+     * @returns {Promise} A future resolved once ready, the value passed is the modal instance.
+     */
+    getModal: (data) => {
+        return new Promise((resolve) => {
+            neogut.loadExtTemplate('modal').then((templates) => {
+                $('body').append(templates[0](data));
+                resolve($('.modal').modal({
+                    backdrop: 'static'
+                }).on('hidden.bs.modal', () => {
+                    $('.modal').remove();
+                }));
+            });
+        });
+    },
+    /**
      * Pulls the list of books and binds them to the UI.
-     * @returns {Promise} 
+     * @returns {Promise} A future revolced once the books have been bound.
      */
     bindAllBooks: () => {
         return new Promise((resolve) => {
             neogut.loadExtTemplate(['book']).then((templates) => {
                 const promises = [];
-                mainProcess.listBooks((books) => {
+                mainProcess.listBooks().then((books) => {
                     books.forEach((book) => {
                         promises.push(new Promise((resolve) => {
-                            mainProcess.listChapters(book, (chapters) => {
+                            mainProcess.listChapters(book).then((chapters) => {
                                 resolve({
                                     book,
                                     chapters
                                 });
                             });
                         }));
-                        const $sidebar = $('.sidebar').empty();
-                        Promise.all(promises).then((values) => {
-                            values.forEach((value) => {
-                                $sidebar.append(templates[0](value));
-                            });
-                            resolve();
+                    });
+                    const $sidebar = $('.sidebar').empty();
+                    Promise.all(promises).then((values) => {
+                        values.forEach((value) => {
+                            $sidebar.append(templates[0](value));
                         });
+                        resolve();
                     });
                 });
 
             });
         });
     },
-
+    /**
+     * Returns the opened chapter from the list, null if the chapter isn't opened.
+     * @param {string} book The name of the book
+     * @param {string} chapter The name of the chapter
+     * @returns {Object|null} The book or null.
+     */
     getOpenedChapter: (book, chapter) => {
-        for (let i = 0; i < neogut.state.openedFiles.length; i++) {
-            if (neogut.state.openedFiles[i].book === book && neogut.state.openedFiles[i].chapter === chapter) {
-                return neogut.state.openedFiles[i];
+        for (let i = 0; i < neogut.openedFiles.length; i++) {
+            if (neogut.openedFiles[i].book === book && neogut.openedFiles[i].chapter === chapter) {
+                return neogut.openedFiles[i];
             }
         }
         return null;
     },
-
+    /**
+     * Returns the index of the opened chapter from the list.
+     * @param {string} book The name of the book
+     * @param {string} chapter The name of the chapter
+     * @returns {number} The book index.
+     */
+    getOpenedChapterIndex: (book, chapter) => {
+        let i = 0;
+        for (; i < neogut.openedFiles.length; i++) {
+            if (neogut.openedFiles[i].book === book && neogut.openedFiles[i].chapter === chapter) {
+                break;
+            }
+        }
+        return i;
+    },
+    /**
+     * Opens the specified chapter 
+     * @param {string} book The name of the book.
+     * @param {string} chapter The title of the chapter
+     * @returns {Promise} A future resolved once the chapter is opened.
+     */
     openChapter: (book, chapter) => {
         if (neogut.getOpenedChapter(book, chapter) === null) {
-            neogut.state.openedFiles.push({book, chapter});
+            neogut.openedFiles.push({book, chapter});
             return new Promise((resolve) => {
                 neogut.loadExtTemplate('tab').then((templates) => {
                     $('.tab-group').append(templates[0]({book, chapter}));
-                    neogut.bindEvents();
+                    neogut.bindBookEvents();
                     neogut.showChapterEditor(book, chapter).then(resolve);
                 });
             });
@@ -139,31 +194,54 @@ window.neogut = {
             });
         }
     },
-
+    /**
+     * Closes the specified chapter 
+     * @param {string} book The name of the book.
+     * @param {string} chapter The title of the chapter
+     * @returns {Promise} A future resolved once the chapter is closed.
+     */
     closeChapter: (book, chapter) => {
         return new Promise((resolve) => {
-            let prev = null;
-            for (let i = 0; i < neogut.state.openedFiles.length; i++) {
-                if (neogut.state.openedFiles[i].book === book && neogut.state.openedFiles[i].chapter === chapter) {
-                    neogut.state.openedFiles.splice(i, 1);
-                    break;
+            const close = () => {
+                let prev = null;
+                for (let i = 0; i < neogut.openedFiles.length; i++) {
+                    if (neogut.openedFiles[i].book === book && neogut.openedFiles[i].chapter === chapter) {
+                        neogut.openedFiles.splice(i, 1);
+                        break;
+                    }
+                    prev = neogut.openedFiles[i];
                 }
-                prev = neogut.state.openedFiles[i];
-            }
-            $('.tab-item[data-book="' + book + '"][data-chapter="' + chapter + '"]').remove();
+                $('.tab-item[data-book="' + book + '"][data-chapter="' + chapter + '"]').remove();
 
-            if (neogut.state.openedFiles.length > 0) {
-                if (prev === null) {
-                    prev = neogut.state.openedFiles[0];
+                if (neogut.openedFiles.length > 0) {
+                    if (prev === null) {
+                        prev = neogut.openedFiles[0];
+                    }
+                    neogut.showChapterEditor(prev.book, prev.chapter).then(resolve);
+                } else {
+                    neogut.editor = null;
+                    $('#editor-container').empty();
+                    resolve();
                 }
-                neogut.showChapterEditor(prev.book, prev.chapter);
+            };
+            if ($('.tab-item[data-book="' + book + '"][data-chapter="' + chapter + '"]').hasClass('has-changes')) {
+                smalltalk.confirm('You have unasved changes',
+                        'Are you sure you want to close ' + book + ' - ' + chapter + '? If you click OK, any unsaved changes will be lost').then(() => {
+                    close();
+                }, () => {
+                    resolve();
+                });
             } else {
-                neogut.editor = null;
-                $('#editor-container').empty();
-                resolve();
+                close();
             }
         });
     },
+    /**
+     * Saves the specified chapter 
+     * @param {string} book The name of the book.
+     * @param {string} chapter The title of the chapter
+     * @returns {Promise} A future resolved once the chapter is saved.
+     */
     saveChapter: (book, chapter) => {
         if (neogut.editor) {
             neogut.editor.off('input');
@@ -171,7 +249,7 @@ window.neogut = {
                 $('#html-preview').html(neogut.showdown.makeHtml(neogut.editor.getValue()));
             });
             return new Promise((resolve) => {
-                mainProcess.saveChapter(book, chapter, neogut.getOpenedChapter(book, chapter).markdown, (err) => {
+                mainProcess.saveChapter(book, chapter, neogut.getOpenedChapter(book, chapter).markdown).then((err) => {
                     if (err) {
                         console.error(err);
                     }
@@ -183,10 +261,20 @@ window.neogut = {
             return Promise.resolve();
         }
     },
+    /**
+     * Opens the displays without opening the chapter editor.
+     * @param {string} book The name of the book.
+     * @param {string} chapter The title of the chapter
+     * @returns {Promise} A future resolved once the chapter editor is shown.
+     */
     showChapterEditor: (book, chapter) => {
         return new Promise((resolve) => {
-            $('.tab-item').removeClass('active');
+            $('.tab-item.active').removeClass('active');
             $('.tab-item[data-book="' + book + '"][data-chapter="' + chapter + '"]').addClass('active');
+
+            $('.nav-group-title.active').removeClass('active');
+            $('.nav-group-title[data-book="' + book + '"]').addClass('active');
+
             const $editorContainer = $('#editor-container').empty(), opened = neogut.getOpenedChapter(book, chapter);
             neogut.loadExtTemplate('editor').then((templates) => {
                 $editorContainer.append(templates[0]());
@@ -201,38 +289,64 @@ window.neogut = {
                     neogut.editor.session.setMode(new MdMode());
                     neogut.editor.setValue(contents, -1);
                     neogut.getOpenedChapter(book, chapter).markdown = contents;
-                    neogut.bindEvents();
+                    neogut.bindBookEvents();
                     resolve();
                 };
 
                 if (opened && opened.markdown) {
                     process(opened.markdown);
                 } else {
-                    mainProcess.getChapter(book, chapter, process);
+                    mainProcess.getChapter(book, chapter).then(process);
                 }
 
             });
 
         });
     },
+    /**
+     * Binds the global event, the ones that last for the duration of the application. Then calls bindBookEvents.
+     * @returns {undefined}
+     */
     bindGlobalEvents: () => {
         $(document).keydown((e) => {
             if (e.ctrlKey) {
                 const $tab = $('.tab-item.active'), book = $tab.data('book'), chapter = $tab.data('chapter');
                 switch (e.which) {
                     case 87 /* W */ :
-                        neogut.closeChapter(book, chapter);
+                        if (e.shiftKey) {
+                            const closeSingle = () => {
+                                if (neogut.openedFiles[0]) {
+                                    neogut.closeChapter(neogut.openedFiles[0].book, neogut.openedFiles[0].chapter).then(closeSingle);
+                                }
+                            };
+                            closeSingle();
+                        } else {
+                            neogut.closeChapter(book, chapter);
+                        }
                         break;
                     case 83 /* S */ :
                         if (e.shiftKey) {
-                            neogut.state.openedFiles.forEach((file) => {
+                            neogut.openedFiles.forEach((file) => {
                                 neogut.saveChapter(file.book, file.chapter);
                             });
                         } else {
                             neogut.saveChapter(book, chapter);
                         }
                         break;
-                    case 123 /* F12 */ :
+                    case 9 /* TAB */:
+                        let index = neogut.getOpenedChapterIndex(book, chapter);
+                        if (e.shiftKey) {
+                            index--;
+                            if (index < 0)
+                                index = neogut.openedFiles.length - 1;
+                        } else {
+                            index++;
+                            if (index > neogut.openedFiles.length - 1)
+                                index = 0;
+                        }
+                        neogut.showChapterEditor(neogut.openedFiles[index].book, neogut.openedFiles[index].chapter);
+                        break;
+                    case 73 /* I */ :
                         if (e.shiftKey) {
                             mainProcess.openDevTool();
                         }
@@ -240,9 +354,79 @@ window.neogut = {
                 }
             }
         });
-        neogut.bindEvents();
+        $('#btn-create-book').off('click').on('click', () => {
+            smalltalk.prompt('Create book', 'Please enter the title of the book.').then((value) => {
+                if (value && value.trim().length > 0) {
+                    mainProcess.createBook(value.trim()).then(neogut.bindAllBooks).then(neogut.bindBookEvents);
+                }
+            });
+        });
+        $('#btn-create-chapter').off('click').on('click', () => {
+            const active = $('.nav-group-title.active');
+            if (active.length > 0) {
+                smalltalk.prompt('Create chapter', 'Please enter the title of the chapter.').then((value) => {
+                    if (value && value.trim().length > 0) {
+                        const newChapter = active.parent().find('.chapter').length + 1;
+                        mainProcess.createChapter(active.data('book'), newChapter + '. ' + value.trim()).then(neogut.bindAllBooks).then(neogut.bindBookEvents);
+                    }
+                });
+            } else {
+                smalltalk.alert('Please select a book.', 'You may select a book by clicking its name in the sidebar.');
+            }
+        });
+        $('#btn-generate-ebooks').off('click').on('click', () => {
+            const active = $('.nav-group-title.active');
+            if (active.length > 0) {
+                mainProcess.generateBook(active.data('book'), (progress) => {
+                    $('.toolbar-footer > .title').text(progress);
+                }).then((state) => {
+                    if (state) {
+                        smalltalk.alert('Success', 'The ebooks we generated succesfuly.');
+                    } else {
+                        smalltalk.alert('Failure', 'The ebooks were not generated succesfuly.');
+                    }
+                });
+            } else {
+                smalltalk.alert('Please select a book.', 'You may select a book by clicking its name in the sidebar.');
+            }
+        });
+
+        $('#btn-open-settings').off('click').on('click', () => {
+            neogut.getModal({
+                title: 'Settings'
+            }).then(($modal) => {
+                const contents = $modal.find('.modal-content');
+
+            });
+        });
+
+        neogut.bindBookEvents();
     },
-    bindEvents: () => {
+    /**
+     * Binds the book related events, rebound everytime books/chapters are added/removed.
+     * @returns {undefined}
+     */
+    bindBookEvents: () => {
+        $('.nav-group-title').off('click').on('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            $('.nav-group-title.active').removeClass('active');
+            $(e.currentTarget).addClass('active');
+        });
+        $('.nav-group-title > .more').off('click').on('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const book = $(e.currentTarget).parent().data('book');
+            neogut.getModal({
+                title: book,
+                data: [
+                    {k: 'book', v: book}
+                ]
+            }).then(($modal) => {
+                const contents = $modal.find('.modal-content');
+
+            });
+        });
         $('.chapter').off('click').on('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -253,7 +437,16 @@ window.neogut = {
             e.preventDefault();
             e.stopPropagation();
             const $this = $(e.currentTarget).parent(), book = $this.data('book'), chapter = $this.data('chapter');
-            alert('TODO: Show settings for ' + book + ' - ' + chapter);
+            neogut.getModal({
+                title: book + ' - ' + chapter,
+                data: [
+                    {k: 'book', v: book},
+                    {k: 'chapter', v: chapter}
+                ]
+            }).then(($modal) => {
+                const contents = $modal.find('.modal-content');
+
+            });
         });
         $('.tab-item').off('click').on('click', (e) => {
             e.preventDefault();
@@ -267,33 +460,23 @@ window.neogut = {
             const $parent = $(e.currentTarget).parent(), book = $parent.data('book'), chapter = $parent.data('chapter');
             neogut.closeChapter(book, chapter);
         });
-        $('.nav-group-title > .more').off('click').on('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const $this = $(e.currentTarget), book = $this.data('book');
-            alert('TODO: Show settings for ' + book);
-        });
+
 
         if (neogut.editor) {
             neogut.editor.off('input');
             neogut.editor.on('input', () => {
-                const markdown = neogut.editor.getValue();
-                $('#html-preview').html(neogut.showdown.makeHtml(markdown));
-                const $activeTab = $('.tab-item.active'), book = $activeTab.data('book'), chapter = $activeTab.data('chapter'),
-                        opened = neogut.getOpenedChapter(book, chapter);
+                if (neogut.editor) {
+                    const markdown = neogut.editor.getValue();
+                    $('#html-preview').html(neogut.showdown.makeHtml(markdown));
+                    const $activeTab = $('.tab-item.active'), book = $activeTab.data('book'), chapter = $activeTab.data('chapter'),
+                            opened = neogut.getOpenedChapter(book, chapter);
 
-                if (opened.markdown !== null && opened.markdown !== markdown) {
-                    $activeTab.addClass('has-changes');
+                    if (opened.markdown !== null && opened.markdown !== markdown) {
+                        $activeTab.addClass('has-changes');
+                    }
+                    opened.markdown = markdown;
                 }
-                opened.markdown = markdown;
             });
         }
-    },
-    /**
-     * Builds the current state of the app
-     * @returns {undefined}
-     */
-    buildApp: () => {
-        neogut.bindAllBooks().then(neogut.bindGlobalEvents);
     }
 };

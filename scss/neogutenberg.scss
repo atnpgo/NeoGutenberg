@@ -20,6 +20,7 @@
 }
 
 $font-family-default: 'Open Sans', sans-serif;
+$close-font-size: 1rem;
 
 // Variables
 @import "photon-0.1.2-alpha/_variables.scss";
@@ -45,12 +46,46 @@ $font-family-default: 'Open Sans', sans-serif;
 @import "photon-0.1.2-alpha/_tables.scss";
 @import "photon-0.1.2-alpha/_tabs.scss";
 
+@import "bootstrap-4.0-beta/_functions.scss";
+@import "bootstrap-4.0-beta/_variables.scss";
+@import "bootstrap-4.0-beta/_mixins.scss";
+//@import "bootstrap-4.0-beta/_print.scss";
+//@import "bootstrap-4.0-beta/_reboot.scss";
+//@import "bootstrap-4.0-beta/_type.scss";
+//@import "bootstrap-4.0-beta/_images.scss";
+//@import "bootstrap-4.0-beta/_code.scss";
+//@import "bootstrap-4.0-beta/_grid.scss";
+//@import "bootstrap-4.0-beta/_tables.scss";
+//@import "bootstrap-4.0-beta/_forms.scss";
+//@import "bootstrap-4.0-beta/_buttons.scss";
+//@import "bootstrap-4.0-beta/_transitions.scss";
+//@import "bootstrap-4.0-beta/_dropdown.scss";
+//@import "bootstrap-4.0-beta/_button-group.scss";
+//@import "bootstrap-4.0-beta/_input-group.scss";
+//@import "bootstrap-4.0-beta/_custom-forms.scss";
+//@import "bootstrap-4.0-beta/_nav.scss";
+//@import "bootstrap-4.0-beta/_navbar.scss";
+//@import "bootstrap-4.0-beta/_card.scss";
+//@import "bootstrap-4.0-beta/_breadcrumb.scss";
+//@import "bootstrap-4.0-beta/_pagination.scss";
+//@import "bootstrap-4.0-beta/_badge.scss";
+//@import "bootstrap-4.0-beta/_jumbotron.scss";
+//@import "bootstrap-4.0-beta/_alert.scss";
+//@import "bootstrap-4.0-beta/_progress.scss";
+//@import "bootstrap-4.0-beta/_media.scss";
+//@import "bootstrap-4.0-beta/_list-group.scss";
+@import "bootstrap-4.0-beta/_close.scss";
+@import "bootstrap-4.0-beta/modal.scss";
+@import "bootstrap-4.0-beta/_tooltip.scss";
+//@import "bootstrap-4.0-beta/_popover.scss";
+//@import "bootstrap-4.0-beta/_carousel.scss";
+@import "bootstrap-4.0-beta/_utilities.scss";
+
 
 .nav-group-title,.nav-group-item {
     & > .more {
         opacity: 0;
         transition: opacity .1s linear;
-        cursor: pointer;
         font-size: 12px;
         padding: {
             left: 4px;
@@ -68,7 +103,17 @@ $font-family-default: 'Open Sans', sans-serif;
     }
 }
 
-.nav-group-title,.nav-group-item {
+.nav-group-title {
+    font-size: 1.5rem;
+    &.active {
+        background-color: $primary-color;
+    }
+    & > .more {
+        margin-top: 10px;
+    }
+}
+
+.nav-group-item {
     & > .more {
         margin-top: 3px;
     }
@@ -88,4 +133,22 @@ $font-family-default: 'Open Sans', sans-serif;
 
 .has-changes {
     font-weight: bold;
+}
+
+.close {
+    position: absolute;
+    top: 0.25rem;
+    right: 0.5rem;
+    outline: none !important;
+}
+
+.modal-content {
+    & > header {
+        border-top-right-radius: 0.3rem;
+        border-top-left-radius: 0.3rem;
+    }
+    & > footer {
+        border-bottom-right-radius: 0.3rem;
+        border-bottom-left-radius: 0.3rem;
+    }
 }
