@@ -507,10 +507,7 @@ a {
 // Icons
 @font-face {
   font-family: "photon-entypo";
-  src: url('/dist/fonts/photon-entypo.eot');
-  src: url('/dist/fonts/photon-entypo.eot?#iefix') format('eot'),
-    url('/dist/fonts/photon-entypo.woff') format('woff'),
-    url('/dist/fonts/photon-entypo.ttf') format('truetype');
+  src: url('../fonts/photon/photon-entypo.woff') format('woff');
   font-weight: normal;
   font-style: normal;
 }

@@ -284,7 +284,10 @@ window.neogut = {
 
                     neogut.editor = ace.edit("md-editor");
                     neogut.editor.$blockScrolling = Infinity;
-                    //neogut.editor.setTheme("ace/theme/monokai");
+
+                    if (localStorage.getItem('editor-theme')) {
+                        neogut.editor.setTheme(localStorage.getItem('editor-theme'));
+                    }
                     var MdMode = ace.require("ace/mode/markdown").Mode;
                     neogut.editor.session.setMode(new MdMode());
                     neogut.editor.setValue(contents, -1);
@@ -377,7 +380,7 @@ window.neogut = {
         $('#btn-generate-ebooks').off('click').on('click', () => {
             const active = $('.nav-group-title.active');
             if (active.length > 0) {
-                mainProcess.generateBook(active.data('book'), (progress) => {
+                mainProcess.generateBook(active.data('book'), localStorage.getItem('author-name'), (progress) => {
                     $('.toolbar-footer > .title').text(progress);
                 }).then((state) => {
                     if (state) {
@@ -395,7 +398,20 @@ window.neogut = {
             neogut.getModal({
                 title: 'Settings'
             }).then(($modal) => {
-                const contents = $modal.find('.modal-content');
+                const modalBody = $modal.find('.modal-body');
+                neogut.loadExtTemplate('settings').then((templates) => {
+                    modalBody.html(templates[0]());
+                    $('#settings-name').off('blur').on('blur', (e) => {
+                        localStorage.setItem('author-name', $(e.currentTarget).val());
+                    }).val(localStorage.getItem('author-name') ? localStorage.getItem('author-name') : '');
+                    $('#settings-editor-theme').off('change').on('change', (e) => {
+                        const newTheme = $(e.currentTarget).val();
+                        localStorage.setItem('editor-theme', newTheme);
+                        if (neogut.editor) {
+                            neogut.editor.setTheme(newTheme);
+                        }
+                    }).val(localStorage.getItem('editor-theme') ? localStorage.getItem('editor-theme') : '');
+                });
 
             });
         });
@@ -423,8 +439,25 @@ window.neogut = {
                     {k: 'book', v: book}
                 ]
             }).then(($modal) => {
-                const contents = $modal.find('.modal-content');
+                const modalBody = $modal.find('.modal-body');
+                neogut.loadExtTemplate('book-settings').then((templates) => {
+                    modalBody.html(templates[0]());
 
+                    mainProcess.getBookFonts(book).then((fonts) => {
+                        fonts.forEach((font) => {
+                            modalBody.find('.checkbox.ff-' + font + ' input').attr('checked', true);
+                        });
+                        modalBody.find('.checkbox[class*="ff-"] > label > input[type="checkbox"]').off('change').on('change', (e) => {
+                            const $this = $(e.currentTarget);
+                            const font = $this.parents('.checkbox').attr('class').match(/ff-.*$/g)[0].substring(3);
+                            if ($this.is(':checked')) {
+                                mainProcess.addFont(book, font);
+                            } else {
+                                mainProcess.removeFont(book, font);
+                            }
+                        });
+                    });
+                });
             });
         });
         $('.chapter').off('click').on('click', (e) => {
@@ -444,7 +477,7 @@ window.neogut = {
                     {k: 'chapter', v: chapter}
                 ]
             }).then(($modal) => {
-                const contents = $modal.find('.modal-content');
+                const modalBody = $modal.find('.modal-body');
 
             });
         });

@@ -14,8 +14,9 @@
 
 const electron = require('electron');
 const app = electron.app;
+const dialog = electron.dialog;
 const BrowserWindow = electron.BrowserWindow;
-const fs = require('fs');
+const fs = require('fs-extra');
 const path = require('path');
 const url = require('url');
 const Epub = require("epub-gen");
@@ -72,7 +73,7 @@ const neogut = {
             neogut.mainWindow = null;
         });
     },
-    generateBook: (book, progressCallback) => {
+    generateBook: (book, authorName, progressCallback) => {
         return new Promise((resolve) => {
             const content = [];
             const bookFolder = path.join(neogut.basePath, book);
@@ -92,11 +93,14 @@ const neogut = {
 
                 progressCallback("Building ePub");
                 const coverPath = path.join(path.join(bookFolder, '_assets'), 'cover.jpg');
-                const epubPath = path.join(path.join(bookFolder, '_out'), book + '.epub');
-                const mobiPath = path.join(path.join(bookFolder, '_out'), book + '.mobi');
-                console.log('epubPath', epubPath);
-                console.log('book', book);
-                console.log('content', content);
+                const fontsPath = path.join(path.join(bookFolder, '_assets'), 'fonts');
+
+                const outPath = dialog.showOpenDialog({
+                    title: 'Select output folder',
+                    properties: ['openDirectory', 'createDirectory']
+                });
+                const epubPath = path.join(outPath[0], book + '.epub');
+                const mobiPath = path.join(outPath[0], book + '.mobi');
                 const options = {
                     output: epubPath,
                     title: book,
@@ -105,6 +109,11 @@ const neogut = {
                     publisher: 'NeoGutenberg',
                     appendChapterTitles: false
                 };
+
+                if (typeof authorName === 'string') {
+                    options.author = authorName;
+                }
+
                 if (fs.existsSync(coverPath)) {
                     options.cover = coverPath;
                 }
@@ -178,7 +187,6 @@ const neogut = {
             const bookPath = path.join(neogut.basePath, book);
             if (!fs.existsSync(bookPath)) {
                 fs.mkdirSync(bookPath);
-                fs.mkdirSync(path.join(bookPath, '_out'));
                 const assetsPath = path.join(bookPath, '_assets')
                 fs.mkdirSync(assetsPath);
                 fs.mkdirSync(path.join(assetsPath, 'css'));
@@ -200,6 +208,38 @@ const neogut = {
             } else {
                 resolve(false);
             }
+        });
+    },
+    getBookFonts: (book) => {
+        return new Promise((resolve) => {
+            const fonts = [];
+            const fontsPath = path.join(path.join(path.join(neogut.basePath, book), '_assets'), 'fonts');
+            fs.readdir(fontsPath, (err, files) => {
+                files.forEach((f) => {
+                    const chapterPath = path.join(fontsPath, f);
+                    if (fs.lstatSync(chapterPath).isDirectory() && !path.basename(chapterPath).startsWith('_')) {
+                        fonts.push(f);
+                    }
+                });
+                resolve(fonts);
+            });
+        });
+    },
+    addFont: (book, font) => {
+        return new Promise((resolve) => {
+            const input = path.join(path.join(__dirname, 'fonts'), font);
+            const output = path.join(path.join(path.join(path.join(neogut.basePath, book), '_assets'), 'fonts'), font);
+            if (!fs.existsSync(output)) {
+                fs.mkdirSync(output);
+            }
+            fs.copy(input, output).then(resolve);
+        });
+    },
+    removeFont: (book, font) => {
+        return new Promise((resolve) => {
+            fs.emptyDir(path.join(path.join(path.join(path.join(neogut.basePath, book), '_assets'), 'fonts'), font)).then(() => {
+                fs.rmdir(path.join(path.join(path.join(path.join(neogut.basePath, book), '_assets'), 'fonts'), font)).then(resolve);
+            });
         });
     }
 };
@@ -228,6 +268,9 @@ exports.getChapter = neogut.getChapter;
 exports.saveChapter = neogut.saveChapter;
 exports.createBook = neogut.createBook;
 exports.createChapter = neogut.createChapter;
+exports.addFont = neogut.addFont;
+exports.removeFont = neogut.removeFont;
+exports.getBookFonts = neogut.getBookFonts;
 
 
 

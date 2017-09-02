@@ -9,15 +9,26 @@
         _\/\\\_______\/\\\_______\/\\\_______\/\\\___\//\\\\\_\/\\\_____________\//\\\\\\\\\\\\/_____\///\\\\\/_____ 
          _\///________\///________\///________\///_____\/////__\///_______________\////////////_________\/////_______
 */
-/* 
-    Created on : 1-Sep-2017, 10:02:45 AM
-    Author     : etienne
-*/
 
-@font-face {
-    font-family: "Open Sans";
-    src: url("../fonts/OpenSans-Regular.ttf");
-}
+@import "../fonts/montserrat/_montserrat.scss";
+@import "../fonts/open-sans/_open-sans.scss";
+@import "../fonts/quicksand/_quicksand.scss";
+@import "../fonts/raleway/_raleway.scss";
+@import "../fonts/roboto/_roboto.scss";
+
+@import "../fonts/abril-fatface/_abril-fatface.scss";
+@import "../fonts/alfa-slab/_alfa-slab.scss";
+@import "../fonts/droid-serif/_droid-serif.scss";
+@import "../fonts/libre-baskerville/_libre-baskerville.scss";
+@import "../fonts/playfair-display/_playfair-display.scss";
+
+@import "../fonts/comic-relief/_comic-relief.scss";
+@import "../fonts/delius-swash-caps/_delius-swash-caps.scss";
+@import "../fonts/kalam/_kalam.scss";
+
+@import "../fonts/1942-report/_1942-report.scss";
+@import "../fonts/special-elite/_special-elite.scss";
+@import "../fonts/underwood-champion/_underwood-champion.scss";
 
 $font-family-default: 'Open Sans', sans-serif;
 $close-font-size: 1rem;
@@ -54,7 +65,7 @@ $close-font-size: 1rem;
 //@import "bootstrap-4.0-beta/_type.scss";
 //@import "bootstrap-4.0-beta/_images.scss";
 //@import "bootstrap-4.0-beta/_code.scss";
-//@import "bootstrap-4.0-beta/_grid.scss";
+@import "bootstrap-4.0-beta/_grid.scss";
 //@import "bootstrap-4.0-beta/_tables.scss";
 //@import "bootstrap-4.0-beta/_forms.scss";
 //@import "bootstrap-4.0-beta/_buttons.scss";
