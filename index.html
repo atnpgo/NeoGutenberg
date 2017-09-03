@@ -1,110 +1,139 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7" lang="en"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8" lang="en"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9" lang="en"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en"> <!--<![endif]-->
     <head>
-        <meta charset="UTF-8">
-        <title>NeoGutenberg</title>
-        <link href="css/smalltalk.min.css" rel="stylesheet" type="text/css"/>
-        <link href="css/jquery-ui.min.css" rel="stylesheet" type="text/css"/>
-        <link href="css/neogutenberg.css" rel="stylesheet" type="text/css"/>
-        <script>if (typeof module === 'object') {
-                window.module = module;
-                module = undefined;
-            }</script>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <title>NeoGutenberb</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="apple-touch-icon-precomposed" sizes="57x57" href="favicons/apple-touch-icon-57x57.png" />
+        <link rel="apple-touch-icon-precomposed" sizes="114x114" href="favicons/apple-touch-icon-114x114.png" />
+        <link rel="apple-touch-icon-precomposed" sizes="72x72" href="favicons/apple-touch-icon-72x72.png" />
+        <link rel="apple-touch-icon-precomposed" sizes="144x144" href="favicons/apple-touch-icon-144x144.png" />
+        <link rel="apple-touch-icon-precomposed" sizes="60x60" href="favicons/apple-touch-icon-60x60.png" />
+        <link rel="apple-touch-icon-precomposed" sizes="120x120" href="favicons/apple-touch-icon-120x120.png" />
+        <link rel="apple-touch-icon-precomposed" sizes="76x76" href="favicons/apple-touch-icon-76x76.png" />
+        <link rel="apple-touch-icon-precomposed" sizes="152x152" href="favicons/apple-touch-icon-152x152.png" />
+        <link rel="icon" type="image/png" href="favicons/favicon-196x196.png" sizes="196x196" />
+        <link rel="icon" type="image/png" href="favicons/favicon-96x96.png" sizes="96x96" />
+        <link rel="icon" type="image/png" href="favicons/favicon-32x32.png" sizes="32x32" />
+        <link rel="icon" type="image/png" href="favicons/favicon-16x16.png" sizes="16x16" />
 
 
-        <script src="js/jquery-3.1.1.min.js" type="text/javascript"></script>
-        <script src="js/underscore-1.8.3.min.js" type="text/javascript"></script>
-        <script src="js/handlebars-v4.0.5.js" type="text/javascript"></script>
-        <script src="js/showdown.min.js" type="text/javascript"></script>
-        <script src="js/ace/ace.js" type="text/javascript"></script>
-        
-        <script src="js/ace/mode-markdown.js" type="text/javascript"></script>
-        <script src="js/ace/mode-scss.js" type="text/javascript"></script>
-        
-        <script src="js/ace/theme-ambiance.js" type="text/javascript"></script>
-        <script src="js/ace/theme-chaos.js" type="text/javascript"></script>
-        <script src="js/ace/theme-chrome.js" type="text/javascript"></script>
-        <script src="js/ace/theme-clouds.js" type="text/javascript"></script>
-        <script src="js/ace/theme-clouds_midnight.js" type="text/javascript"></script>
-        <script src="js/ace/theme-cobalt.js" type="text/javascript"></script>
-        <script src="js/ace/theme-crimson_editor.js" type="text/javascript"></script>
-        <script src="js/ace/theme-dawn.js" type="text/javascript"></script>
-        <script src="js/ace/theme-dreamweaver.js" type="text/javascript"></script>
-        <script src="js/ace/theme-eclipse.js" type="text/javascript"></script>
-        <script src="js/ace/theme-github.js" type="text/javascript"></script>
-        <script src="js/ace/theme-gob.js" type="text/javascript"></script>
-        <script src="js/ace/theme-gruvbox.js" type="text/javascript"></script>
-        <script src="js/ace/theme-idle_fingers.js" type="text/javascript"></script>
-        <script src="js/ace/theme-iplastic.js" type="text/javascript"></script>
-        <script src="js/ace/theme-katzenmilch.js" type="text/javascript"></script>
-        <script src="js/ace/theme-kr_theme.js" type="text/javascript"></script>
-        <script src="js/ace/theme-kuroir.js" type="text/javascript"></script>
-        <script src="js/ace/theme-merbivore.js" type="text/javascript"></script>
-        <script src="js/ace/theme-merbivore_soft.js" type="text/javascript"></script>
-        <script src="js/ace/theme-mono_industrial.js" type="text/javascript"></script>
-        <script src="js/ace/theme-monokai.js" type="text/javascript"></script>
-        <script src="js/ace/theme-pastel_on_dark.js" type="text/javascript"></script>
-        <script src="js/ace/theme-solarized_dark.js" type="text/javascript"></script>
-        <script src="js/ace/theme-solarized_light.js" type="text/javascript"></script>
-        <script src="js/ace/theme-sqlserver.js" type="text/javascript"></script>
-        <script src="js/ace/theme-terminal.js" type="text/javascript"></script>
-        <script src="js/ace/theme-textmate.js" type="text/javascript"></script>
-        <script src="js/ace/theme-tomorrow.js" type="text/javascript"></script>
-        <script src="js/ace/theme-tomorrow_night.js" type="text/javascript"></script>
-        <script src="js/ace/theme-tomorrow_night_blue.js" type="text/javascript"></script>
-        <script src="js/ace/theme-tomorrow_night_bright.js" type="text/javascript"></script>
-        <script src="js/ace/theme-tomorrow_night_eighties.js" type="text/javascript"></script>
-        <script src="js/ace/theme-twilight.js" type="text/javascript"></script>
-        <script src="js/ace/theme-vibrant_ink.js" type="text/javascript"></script>
-        <script src="js/ace/theme-xcode.js" type="text/javascript"></script>
-        
-        
-        <script src="js/smalltalk.min.js" type="text/javascript"></script>
+        <!-- For Google -->
+        <meta name="description" content="A printing press for the digital age." />
+        <meta name="keywords" content="neogutenberg,printing,press,epub,mobi" />
+        <meta name="author" content="ATNPGO" />
+        <meta name="copyright" content="Etienne Pageau 2017" />
+        <meta name="application-name" content="NeoGutenberg" />
 
-        <script src="js/popper.min.js" type="text/javascript"></script>
-        <script src="js/bootstrap.min.js" type="text/javascript"></script>
-        
-        <script src="js/jquery-ui.min.js" type="text/javascript"></script>
-        
-        <script src="js/app.js" type="text/javascript"></script>
+        <!-- For Facebook -->
+        <meta property="og:title" content="NeoGutenberg" />
+        <meta property="og:type" content="product" />
+        <meta property="og:image" content="https://atnpgo.github.com/NeoGutenberg/logo/logo.svg" />
+        <meta property="og:url" content="https://atnpgo.github.com/NeoGutenberg/" />
+        <meta property="og:description" content="A printing press for the digital age." />
 
-        <script>if (window.module)
-                module = window.module;</script>
+        <!-- For Twitter -->
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:title" content="NeoGutenberg" />
+        <meta name="twitter:description" content="A printing press for the digital age." />
+        <meta name="twitter:image" content="https://atnpgo.github.com/NeoGutenberg/logo/logo.svg" />
+
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous">
+
+        <style>
+            body {
+                padding-top: 50px;
+                padding-bottom: 20px;
+            }
+        </style>
+        <link rel="stylesheet" href="css/main.css">
+
+        <script src="js/vendor/modernizr-2.8.3-respond-1.4.2.min.js"></script>
     </head>
     <body>
-        <div class="window">
-            <header class="toolbar toolbar-header">
-                <div class="toolbar-actions">
+        <!--[if lt IE 8]>
+            <p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+        <![endif]-->
+        <div class="container">
+            <!--div class="header clearfix">
+                <nav>
+                    <ul class="nav nav-pills float-right">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#">Home <span class="sr-only">(current)</span></a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">About</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">Contact</a>
+                        </li>
+                    </ul>
+                </nav>
+                <h3 class="text-muted">NeoGutenberg</h3>
+            </div-->
 
-                    <div class="btn-group">
-                        <button id="btn-create-book" class="btn btn-large btn-default" title="Create book" data-toggle="tooltip" data-placement="bottom">
-                            <span class="icon icon-book"></span>
-                        </button>
-                        <button id="btn-create-chapter" class="btn btn-large btn-default" title="Create chapter"data-toggle="tooltip" data-placement="bottom">
-                            <span class="icon icon-bookmark"></span>
-                        </button>
-                    </div>
-                    <button id="btn-generate-ebooks" class="btn btn-large btn-default" title="Generate ebooks"data-toggle="tooltip" data-placement="bottom">
-                        <span class="icon icon-export"></span>
-                    </button>
+            <div class="jumbotron">
+                <h1 class="display-3">NeoGutenberg</h1>
+                <p class="lead">A printing press for the digital age.</p>
+                <p><button id="btn-download-now" class="btn btn-lg btn-success">Download now</button></p>
+            </div>
 
-                    <button id="btn-open-settings" class="btn btn-large btn-default pull-right" title="Settings"data-toggle="tooltip" data-placement="bottom">
-                        <span class="icon icon-cog"></span>
-                    </button>
+            <div class="row marketing">
+                <div class="col-12 col-md-6">
+                    <h4>Built-in editor</h4> 
+                    <p>Edit your files using markdown, avoid HTML like other ebook publishing</p>
+
+                    <h4>Free</h4>
+                    <p>Completely free, as in both gratis and libre. If you paid for this, you got ripped off.</p>
+
+                    <h4>Multi-Format</h4>
+                    <p>Publish your books in both ePub and mobi format.</p>
                 </div>
-            </header>
-            <div class="window-content">
-                <div class="pane-group">
-                    <div class="pane pane-sm sidebar"></div>
-                    <div class="pane">
-                        <div class="tab-group"></div>
-                        <div id="editor-container"></div>
-                    </div>
+
+                <div class="col-12 col-md-6">
+                    <h4>Custom Styling</h4>
+                    <p>Customize the look and feel of your books usinc SCSS/CSS.</p>
+
+                    <h4>Themeable Editor</h4>
+                    <p>By leveraging Ace Editor, you may apply themes to the editor.</p>
+
+                    <h4>Subheading</h4>
+                    <p>Maecenas sed diam eget risus varius blandit sit amet non magna.</p>
                 </div>
             </div>
-            <footer class="toolbar toolbar-footer">
-                <h1 class="title pull-left ml-2"></h1>
+
+            <footer class="footer">
+                <p>&copy; Etienne Pageau 2017</p>
             </footer>
+
         </div>
+
+        <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js" integrity="sha384-b/U6ypiBEHpOf/4+1nzFpr53nxSS+GLCkfwBdFNTxtclqqenISfwAzpKaMNFNmj4" crossorigin="anonymous"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/js/bootstrap.min.js" integrity="sha384-h0AbiXch4ZDo7tp9hKZ4TsHbi047NrKGLO3SEJAg45jXxnGIfYzk4Si90RDIqNm1" crossorigin="anonymous"></script>
+
+        <script src="js/main.js"></script>
+
+        <!-- Google Analytics: change UA-XXXXX-X to be your site's ID. -->
+        <script>
+            (function (b, o, i, l, e, r) {
+                b.GoogleAnalyticsObject = l;
+                b[l] || (b[l] =
+                        function () {
+                            (b[l].q = b[l].q || []).push(arguments)
+                        });
+                b[l].l = +new Date;
+                e = o.createElement(i);
+                r = o.getElementsByTagName(i)[0];
+                e.src = '//www.google-analytics.com/analytics.js';
+                r.parentNode.insertBefore(e, r)
+            }(window, document, 'script', 'ga'));
+            ga('create', 'UA-51671276-1', 'auto');
+            ga('send', 'pageview');
+        </script>
     </body>
 </html>
