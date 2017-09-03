@@ -94,6 +94,11 @@ $close-font-size: 1rem;
 
 
 .nav-group-title,.nav-group-item {
+    & > div {
+        display: inline-block;
+        text-overflow: ellipsis;
+        overflow: hidden;
+    }
     & > .more {
         opacity: 0;
         transition: opacity .1s linear;
@@ -102,6 +107,7 @@ $close-font-size: 1rem;
             left: 4px;
             right: 4px;
         }
+        right: 0px;
         border-radius: 3px;
         &:hover {
             background-color: rgba(0,0,0,.08);
@@ -119,12 +125,22 @@ $close-font-size: 1rem;
     &.active {
         background-color: $primary-color;
     }
+    & > .icon-book {
+        position: relative;
+        top: -12px;
+    }
+    & > div {
+        max-width: calc(100% - 45px);
+    }
     & > .more {
         margin-top: 10px;
     }
 }
 
 .nav-group-item {
+    & > div {
+        max-width: calc(100% - 52px);
+    }
     & > .more {
         margin-top: 3px;
     }
@@ -172,4 +188,9 @@ $close-font-size: 1rem;
 
 .smalltalk {
     z-index: 9999;
+}
+
+
+.ui-droppable-hover {
+    border-bottom: 1px solid $border-color;
 }

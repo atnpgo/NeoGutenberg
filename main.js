@@ -23,6 +23,7 @@ const Epub = require("epub-gen");
 const kindlegen = require("kindlegen");
 const showdown = require('showdown');
 const compile = require('./js/sass.js/sass.node');
+const _ = require('./js/underscore-1.8.3.min');
 const converter = new showdown.Converter({
     strikethrough: true,
     tables: true
@@ -45,34 +46,164 @@ const neogut = {
      */
     createWindow: () => {
         neogut.basePath = path.join(app.getPath('documents'), 'NeoGutenberg');
+        const create = () => {
+            neogut.mainWindow = new BrowserWindow({
+                width: 800,
+                height: 600,
+                'min-width': 800,
+                'min-height': 600,
+                icon:'./logo/logo.png',
+                'accept-first-mouse': true,
+                'title-bar-style': 'hidden'
+            });
+            neogut.mainWindow.maximize();
+            neogut.mainWindow.setMenu(null);
+            neogut.mainWindow.loadURL(url.format({
+                pathname: path.join(__dirname, 'index.html'),
+                protocol: 'file:',
+                slashes: true
+            }));
+            neogut.mainWindow.on('closed', () => {
+                neogut.mainWindow = null;
+            });
+        };
         if (!fs.existsSync(neogut.basePath)) {
             fs.mkdirSync(neogut.basePath);
+            const book = 'Guide', chapter = '1. Quick Reference';
+            neogut.createBook(book).then(() => {
+                neogut.createChapter(book, chapter).then(() => {
+                    neogut.saveChapter(book, chapter + '.md',
+                            `Adapted from Adam Pritchard's markdown cheatsheethttps://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet
+
+# H1
+## H2
+### H3
+#### H4
+##### H5
+###### H6
+
+Alternatively, for H1 and H2, an underline-ish style:
+
+Alt-H1
+======
+
+Alt-H2
+------
+
+# Emphasis
+
+Emphasis, aka italics, with *asterisks* or _underscores_.
+
+Strong emphasis, aka bold, with **asterisks** or __underscores__.
+
+Combined emphasis with **asterisks and _underscores_**.
+
+Strikethrough uses two tildes. ~~Scratch this.~~
+
+# Lists
+
+1. First ordered list item
+2. Another item
+    * Unordered sub-list. 
+1. Actual numbers don't matter, just that it's a number
+    1. Ordered sub-list
+4. And another item.
+
+ You can have properly indented paragraphs within list items. Notice the blank line above, 
+ and the leading spaces.
+
+ To have a line break without a paragraph, you will need to use two trailing spaces.  
+ Note that this line is separate, but within the same paragraph.
+
+* Unordered list can use asterisks
+- Or minuses
++ Or pluses
+
+# Links
+
+# Images
+![alt text](https://raw.githubusercontent.com/atnpgo/NeoGutenberg/master/logo/logo.svg)
+
+
+# Tables
+
+Colons can be used to align columns.
+
+| Tables        | Are           | Cool  |
+| ------------- |:-------------:| -----:|
+| col 3 is      | right-aligned | $1600 |
+| col 2 is      | centered      |   $12 |
+| zebra stripes | are neat      |    $1 |
+
+There must be at least 3 dashes separating each header cell.
+The outer pipes (|) are optional, and you don't need to make the 
+raw Markdown line up prettily. You can also use inline Markdown.
+
+Markdown | Less | Pretty
+--- | --- | ---
+*Still* | \`renders\` | **nicely**
+1 | 2 | 3
+
+# Blockquotes
+
+> Blockquotes are very handy in email to emulate reply text.
+> This line is part of the same quote.
+
+Quote break.
+
+> This is a very long line that will still be quoted properly when it wraps. Oh boy let's keep writing to make sure this is long enough to actually wrap for everyone. Oh, you can *put* **Markdown** into a blockquote. 
+
+# Inline HTML
+
+<dl>
+  <dt>Definition list</dt>
+  <dd>Is something people use sometimes.</dd>
+
+  <dt>Markdown in HTML</dt>
+  <dd>Does *not* work **very** well. Use HTML <em>tags</em>.</dd>
+</dl>
+
+# Horizontal Rule
+
+Three or more...
+
+---
+
+Hyphens
+
+***
+
+Asterisks
+
+___
+
+Underscores
+
+# Line Breaks
+
+Here's a line for us to start with.
+
+This line is separated from the one above by two newlines, so it will be a *separate paragraph*.
+
+This line is also a separate paragraph, but...
+This line is only separated by a single newline, so it's a separate line in the *same paragraph*.
+
+# Code
+
+Inline \`code\` has \`back-ticks around\` it.
+
+Use triple backticks to preserve formating.
+\`\`\`
+var s = "Multi-line code example";
+alert(s);
+\`\`\`
+`).then(create);
+                });
+            });
+
+        } else {
+            create();
         }
-        // Create the browser window.
-        neogut.mainWindow = new BrowserWindow({
-            width: 800,
-            height: 600,
-            'min-width': 800,
-            'min-height': 600,
-            'accept-first-mouse': true,
-            'title-bar-style': 'hidden'
-        });
-        neogut.mainWindow.maximize();
-
-        neogut.mainWindow.setMenu(null);
-
-        // and load the index.html of the app.
-        neogut.mainWindow.loadURL(url.format({
-            pathname: path.join(__dirname, 'index.html'),
-            protocol: 'file:',
-            slashes: true
-        }));
-
-        // Emitted when the window is closed.
-        neogut.mainWindow.on('closed', () => {
-            // when you should delete the corresponding element.
-            neogut.mainWindow = null;
-        });
     },
     generateBook: (book, authorName, progressCallback) => {
         return new Promise((resolve) => {
@@ -80,17 +211,28 @@ const neogut = {
             const bookFolder = path.join(neogut.basePath, book);
             fs.readdir(bookFolder, (err, files) => {
                 progressCallback("Building content");
+
+                const chapters = [];
                 files.forEach((file) => {
                     const fullPath = path.join(bookFolder, file);
                     const baseName = path.basename(file, '.md');
                     if (!fs.lstatSync(fullPath).isDirectory() && !path.basename(file).startsWith('_')) {
-                        progressCallback("Building Chapter " + baseName);
-                        content.push({
-                            title: baseName.substring(2),
-                            data: converter.makeHtml(fs.readFileSync(fullPath, 'UTF-8'))
-                        });
+                        chapters.push(file);
                     }
                 });
+
+                _.sortBy(chapters, (chapter) => {
+                    return Number.parseInt(chapter.substring(0, chapter.indexOf('.')));
+                }).forEach((file) => {
+                    const fullPath = path.join(bookFolder, file);
+                    const baseName = path.basename(file, '.md');
+                    progressCallback("Building Chapter " + baseName);
+                    content.push({
+                        title: baseName.substring(baseName.indexOf('.') + 2),
+                        data: converter.makeHtml(fs.readFileSync(fullPath, 'UTF-8'))
+                    });
+                });
+
 
                 const assetsFolder = path.join(bookFolder, '_assets');
                 const coverPath = path.join(assetsFolder, 'cover.jpg');
@@ -259,7 +401,37 @@ const neogut = {
                 fs.mkdirSync(assetsPath);
                 fs.mkdirSync(path.join(assetsPath, 'fonts'));
                 fs.mkdirSync(path.join(assetsPath, 'images'));
-                fs.writeFile(path.join(assetsPath, 'book.scss'), '', 'UTF-8', () => {
+                fs.writeFile(path.join(assetsPath, 'book.scss'),
+                        `/*
+STYLES:
+    This is the book's stylesheet, in here you may use either CSS or
+    SCSS (http://sass-lang.com/guide) to apply custom styles to your generated
+    books.      
+
+FONTS: 
+    To apply an included font, simply apply the font name property on any
+    element. For convenience, some includable classes are also available which
+    will apply the font to the element and all its descendants.
+        *  font-name: "Montserrat"; OR @include .ff-montserrat;
+        *  font-name: "Open Sans"; OR @include .ff-open-sans;
+        *  font-name: "Quicksand"; OR @include .ff-quicksand;
+        *  font-name: "Raleway"; OR @include .ff-raleway;
+        *  font-name: "Roboto"; OR @include .ff-roboto;
+
+        *  font-name: "Abril Fatface"; OR @include .ff-abril-fatface;
+        *  font-name: "Alfa Slab"; OR @include .ff-alfa-slab;
+        *  font-name: "Droid Serif"; OR @include .ff-droid-serif;
+        *  font-name: "Libre Baskerville"; OR @include .ff-libre-baskerville;
+        *  font-name: "Playfair Display"; OR @include .ff-playfair-display;
+
+        *  font-name: "Comic Relief"; OR @include .ff-comic-relief;
+        *  font-name: "Delius Swash Caps"; OR @include .ff-delius-swash-caps;
+        *  font-name: "Kalam"; OR @include .ff-kalam;
+
+        *  font-name: "1942 Report"; OR @include .ff-1942-report;
+        *  font-name: "Special Elite"; OR @include .ff-special-elite;
+        *  font-name: "Underwood Champion"; OR @include .ff-underwood-champion;
+*/`, 'UTF-8', () => {
                     resolve(true);
                 });
             } else {
@@ -323,6 +495,76 @@ const neogut = {
                 fs.rmdir(fontPath).then(resolve);
             });
         });
+    },
+    moveAfter: (book, after, toMove) => {
+        return new Promise((resolve) => {
+            const bookPath = path.join(neogut.basePath, book);
+            const afterNumber = Number.parseInt(after.substring(0, after.indexOf('.')));
+            const movedNumber = Number.parseInt(toMove.substring(0, toMove.indexOf('.')));
+
+            fs.readdir(bookPath, (err, files) => {
+                const toAugment = [];
+                files.forEach((file) => {
+                    if (!fs.lstatSync(path.join(bookPath, file)).isDirectory() && !path.basename(file).startsWith('_')) {
+                        const chapterNumber = Number.parseInt(file.substring(0, file.indexOf('.')));
+                        if (chapterNumber > afterNumber) {
+                            toAugment.push({
+                                name: file,
+                                number: chapterNumber,
+                                base: file.substring(file.indexOf('0') + 2)
+                            });
+                        }
+                    }
+                });
+                const tightenChapters = () => {
+                    fs.readdir(bookPath, (err, files) => {
+
+                        let chapters = [];
+                        files.forEach((file) => {
+                            if (!fs.lstatSync(path.join(bookPath, file)).isDirectory() && !path.basename(file).startsWith('_')) {
+                                chapters.push(file);
+                            }
+                        });
+                        chapters = _.sortBy(chapters, (chapter) => {
+                            return Number.parseInt(chapter.substring(0, chapter.indexOf('.')));
+                        });
+
+                        const promises = [];
+                        for (let i = 0; i < chapters.length; i++) {
+                            promises.push(new Promise((resolve) => {
+                                const currentName = chapters[i];
+                                const newName = (i + 1) + '. ' + currentName.substring(currentName.indexOf('.') + 2);
+                                if (currentName !== newName) {
+                                    fs.rename(path.join(bookPath, currentName), path.join(bookPath, newName), resolve);
+                                } else {
+                                    resolve();
+                                }
+                            }));
+                        }
+                        Promise.all(promises).then(resolve);
+                    });
+                };
+                const processSingleAugmentation = () => {
+                    if (toAugment.length > 0) {
+                        const currentChapter = toAugment.pop();
+                        fs.rename(path.join(bookPath, currentChapter.name), path.join(bookPath, (currentChapter.number + 1) + currentChapter.base), (err) => {
+                            processSingleAugmentation();
+                        });
+                    } else {
+                        fs.rename(path.join(bookPath, toMove), path.join(bookPath, (afterNumber + 1) + toMove.substring(toMove.indexOf('0') + 2)), (err) => {
+                            tightenChapters();
+                        });
+                    }
+                };
+                processSingleAugmentation();
+
+
+            });
+        });
+
+
+
+
     }
 };
 
@@ -356,6 +598,7 @@ exports.getBookFonts = neogut.getBookFonts;
 exports.deleteBook = neogut.deleteBook;
 exports.deleteChapter = neogut.deleteChapter;
 exports.getBookStyle = neogut.getBookStyle;
+exports.moveAfter = neogut.moveAfter;
 
 
 

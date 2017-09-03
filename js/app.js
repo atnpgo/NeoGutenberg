@@ -134,6 +134,9 @@ window.neogut = {
                     const $sidebar = $('.sidebar').empty();
                     Promise.all(promises).then((values) => {
                         values.forEach((value) => {
+                            value.chapters = _.sortBy(value.chapters, (chapter) => {
+                                return Number.parseInt(chapter.substring(0, chapter.indexOf('.')));
+                            });
                             $sidebar.append(templates[0](value));
                         });
                         resolve();
@@ -619,5 +622,26 @@ window.neogut = {
                 }
             });
         }
+
+        let source =
+                $('.chapter').each((i, item) => {
+            const $this = $(item), book = $this.data('book');
+            $this.draggable({
+                helper: 'clone',
+                revert: "invalid",
+                start: (e, ui) => {
+                    source = $(e.target).css('opacity', '.5');
+                },
+                stop: (e, ui) => {
+                    $(e.target).css('opacity', '1');
+                }
+            });
+            $this.droppable({
+                accept: '.chapter[data-book="' + book + '"]',
+                drop: (e, ui) => {
+                    mainProcess.moveAfter(book, $(e.target).data('chapter'), source.data('chapter')).then(neogut.bindAllBooks).then(neogut.bindBookEvents);
+                }
+            });
+        });
     }
 };
