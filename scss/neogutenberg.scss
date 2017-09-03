@@ -92,6 +92,8 @@ $close-font-size: 1rem;
 //@import "bootstrap-4.0-beta/_carousel.scss";
 @import "bootstrap-4.0-beta/_utilities.scss";
 
+@import "book.scss";
+
 
 .nav-group-title,.nav-group-item {
     & > div {
@@ -192,12 +194,4 @@ $close-font-size: 1rem;
 
 .ui-droppable-hover {
     border-bottom: 1px solid $border-color;
-}
-
-img {
-    max-width: 100%;
-}
-
-table {
-    width: 100%;
 }
