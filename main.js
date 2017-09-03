@@ -10,7 +10,7 @@
  *          _\///________\///________\///________\///_____\/////__\///_______________\////////////_________\/////_______
  */
 
-/* global __dirname */
+/* global __dirname, Promise */
 
 const electron = require('electron');
 const app = electron.app;
@@ -22,6 +22,7 @@ const url = require('url');
 const Epub = require("epub-gen");
 const kindlegen = require("kindlegen");
 const showdown = require('showdown');
+const compile = require('./js/sass.js/sass.node');
 const converter = new showdown.Converter({
     strikethrough: true,
     tables: true
@@ -91,49 +92,92 @@ const neogut = {
                     }
                 });
 
-                progressCallback("Building ePub");
+
                 const coverPath = path.join(path.join(bookFolder, '_assets'), 'cover.jpg');
+                const scssPath = path.join(path.join(bookFolder, '_assets'), 'book.scss');
                 const fontsPath = path.join(path.join(bookFolder, '_assets'), 'fonts');
 
-                const outPath = dialog.showOpenDialog({
-                    title: 'Select output folder',
-                    properties: ['openDirectory', 'createDirectory']
+                progressCallback("Parsing fonts");
+                const fonts = [];
+                let css = '';
+
+                const sassPromises = [];
+
+
+                fs.readdirSync(fontsPath).forEach((font) => {
+                    const fontPath = path.join(fontsPath, font);
+                    fs.readdirSync(fontPath).forEach((file) => {
+                        if (file.endsWith('.ttf')) {
+                            fonts.push(path.join(fontPath, file));
+                        } else if (file.endsWith('.scss')) {
+                            sassPromises.push(new Promise((resolve) => {
+                                compile(path.join(fontPath, file), (result) => {
+                                    css += result.text;
+                                    resolve();
+                                });
+                            }));
+                        }
+                    });
                 });
-                const epubPath = path.join(outPath[0], book + '.epub');
-                const mobiPath = path.join(outPath[0], book + '.mobi');
-                const options = {
-                    output: epubPath,
-                    title: book,
-                    content,
-                    author: 'ATNPGO',
-                    publisher: 'NeoGutenberg',
-                    appendChapterTitles: false
-                };
 
-                if (typeof authorName === 'string') {
-                    options.author = authorName;
-                }
+                progressCallback('Generating styles');
+                Promise.all(sassPromises).then(() => {
+                    css = css.replace(/\.\.\/fonts\/.*\//g, './fonts/');
+                    (new Promise((resolve) => {
+                        if (fs.existsSync(scssPath)) {
+                            compile(scssPath, (result) => {
+                                css += result.text;
+                                resolve();
+                            });
+                        } else {
+                            resolve();
+                        }
+                    })).then(() => {
+                        console.log(css);
+                        progressCallback("Building ePub");
+                        const outPath = dialog.showOpenDialog({
+                            title: 'Select output folder',
+                            properties: ['openDirectory', 'createDirectory']
+                        });
+                        const epubPath = path.join(outPath[0], book + '.epub');
+                        const mobiPath = path.join(outPath[0], book + '.mobi');
+                        const options = {
+                            output: epubPath,
+                            title: book,
+                            content,
+                            fonts,
+                            css,
+                            author: 'ATNPGO',
+                            publisher: 'NeoGutenberg',
+                            appendChapterTitles: false
+                        };
 
-                if (fs.existsSync(coverPath)) {
-                    options.cover = coverPath;
-                }
+                        if (typeof authorName === 'string') {
+                            options.author = authorName;
+                        }
 
-                new Epub(options).promise.then(function () {
-                    progressCallback("Building mobi");
-                    kindlegen(fs.readFileSync(epubPath), (error, mobi) => {
-                        fs.writeFile(mobiPath, mobi, (err) => {
-                            if (err) {
-                                progressCallback(err);
-                                resolve(false);
-                            } else {
-                                progressCallback("Ebooks Generated Successfully!");
-                                resolve(true);
-                            }
+                        if (fs.existsSync(coverPath)) {
+                            options.cover = coverPath;
+                        }
+
+                        new Epub(options).promise.then(function () {
+                            progressCallback("Building mobi");
+                            kindlegen(fs.readFileSync(epubPath), (error, mobi) => {
+                                fs.writeFile(mobiPath, mobi, (err) => {
+                                    if (err) {
+                                        progressCallback(err);
+                                        resolve(false);
+                                    } else {
+                                        progressCallback("Ebooks Generated Successfully!");
+                                        resolve(true);
+                                    }
+                                });
+                            });
+                        }, (err) => {
+                            progressCallback("Failed to generate epub because of " + err);
+                            resolve(false);
                         });
                     });
-                }, (err) => {
-                    progressCallback("Failed to generate epub because of " + err);
-                    resolve(false);
                 });
             });
         });
@@ -187,13 +231,13 @@ const neogut = {
             const bookPath = path.join(neogut.basePath, book);
             if (!fs.existsSync(bookPath)) {
                 fs.mkdirSync(bookPath);
-                const assetsPath = path.join(bookPath, '_assets')
+                const assetsPath = path.join(bookPath, '_assets');
                 fs.mkdirSync(assetsPath);
-                fs.mkdirSync(path.join(assetsPath, 'css'));
-                fs.mkdirSync(path.join(assetsPath, 'scss'));
                 fs.mkdirSync(path.join(assetsPath, 'fonts'));
                 fs.mkdirSync(path.join(assetsPath, 'images'));
-                resolve(true);
+                fs.writeFile(path.join(assetsPath, 'book.scss'), '', 'UTF-8', () => {
+                    resolve(true);
+                });
             } else {
                 resolve(false);
             }

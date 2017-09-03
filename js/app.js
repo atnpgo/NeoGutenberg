@@ -384,7 +384,7 @@ window.neogut = {
                     $('.toolbar-footer > .title').text(progress);
                 }).then((state) => {
                     if (state) {
-                        smalltalk.alert('Success', 'The ebooks we generated succesfuly.');
+                        smalltalk.alert('Success', 'The ebooks was generated succesfuly.');
                     } else {
                         smalltalk.alert('Failure', 'The ebooks were not generated succesfuly.');
                     }
