@@ -1,4 +1,5 @@
 <div class="tab-item active" data-book="{{book}}" data-chapter="{{chapter}}">
     <span class="icon icon-cancel icon-close-tab close"></span>
-    {{chapter}}
+    {{book}} - {{#if chapter}}{{chapter}}{{else}}stylesheet{{/if}}
+    <span class="tag">*</span>
 </div>

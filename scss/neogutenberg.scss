@@ -141,9 +141,15 @@ $close-font-size: 1rem;
         }
     }
 }
-
+.tag {
+    opacity: 0;
+    transition: opacity .1s linear;
+}
 .has-changes {
     font-weight: bold;
+    & .tag {
+        opacity: 1;
+    }
 }
 
 .close {
@@ -162,4 +168,8 @@ $close-font-size: 1rem;
         border-bottom-right-radius: 0.3rem;
         border-bottom-left-radius: 0.3rem;
     }
+}
+
+.smalltalk {
+    z-index: 9999;
 }

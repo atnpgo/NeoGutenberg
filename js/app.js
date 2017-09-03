@@ -11,7 +11,7 @@
  */
 
 
-/* global Promise */
+/* global Promise, ace, smalltalk */
 
 const remote = require('electron').remote;
 const mainProcess = remote.require('./main.js');
@@ -114,7 +114,7 @@ window.neogut = {
     },
     /**
      * Pulls the list of books and binds them to the UI.
-     * @returns {Promise} A future revolced once the books have been bound.
+     * @returns {Promise} A future revolced once the books have been bound. Does not call bind events.
      */
     bindAllBooks: () => {
         return new Promise((resolve) => {
@@ -150,6 +150,9 @@ window.neogut = {
      * @returns {Object|null} The book or null.
      */
     getOpenedChapter: (book, chapter) => {
+        if (!_.isNull(chapter) && (_.isUndefined(chapter) || chapter.length === 0)) {
+            chapter = null;
+        }
         for (let i = 0; i < neogut.openedFiles.length; i++) {
             if (neogut.openedFiles[i].book === book && neogut.openedFiles[i].chapter === chapter) {
                 return neogut.openedFiles[i];
@@ -164,6 +167,9 @@ window.neogut = {
      * @returns {number} The book index.
      */
     getOpenedChapterIndex: (book, chapter) => {
+        if (!_.isNull(chapter) && (_.isUndefined(chapter) || chapter.length === 0)) {
+            chapter = null;
+        }
         let i = 0;
         for (; i < neogut.openedFiles.length; i++) {
             if (neogut.openedFiles[i].book === book && neogut.openedFiles[i].chapter === chapter) {
@@ -205,11 +211,14 @@ window.neogut = {
             const close = () => {
                 let prev = null;
                 for (let i = 0; i < neogut.openedFiles.length; i++) {
-                    if (neogut.openedFiles[i].book === book && neogut.openedFiles[i].chapter === chapter) {
+                    if (neogut.openedFiles[i].book === book && neogut.openedFiles[i].chapter === (chapter === '' ? null : chapter)) {
                         neogut.openedFiles.splice(i, 1);
                         break;
                     }
                     prev = neogut.openedFiles[i];
+                }
+                if (chapter === null) {
+                    chapter = '';
                 }
                 $('.tab-item[data-book="' + book + '"][data-chapter="' + chapter + '"]').remove();
 
@@ -268,6 +277,10 @@ window.neogut = {
      * @returns {Promise} A future resolved once the chapter editor is shown.
      */
     showChapterEditor: (book, chapter) => {
+        if (chapter === null || chapter === '') {
+            return neogut.showBookStyleEditor(book);
+        }
+
         return new Promise((resolve) => {
             $('.tab-item.active').removeClass('active');
             $('.tab-item[data-book="' + book + '"][data-chapter="' + chapter + '"]').addClass('active');
@@ -300,6 +313,66 @@ window.neogut = {
                     process(opened.markdown);
                 } else {
                     mainProcess.getChapter(book, chapter).then(process);
+                }
+
+            });
+
+        });
+    },
+    /**
+     * Opens the specified book's style sheet.
+     * @param {string} book The name of the book.
+     * @returns {Promise} A future resolved once the book styles are opened.
+     */
+    openBookStyle: (book) => {
+        if (neogut.getOpenedChapter(book, null) === null) {
+            neogut.openedFiles.push({book, chapter: null});
+            return new Promise((resolve) => {
+                neogut.loadExtTemplate('tab').then((templates) => {
+                    $('.tab-group').append(templates[0]({book, chapter: null}));
+                    neogut.bindBookEvents();
+                    neogut.showBookStyleEditor(book).then(resolve);
+                });
+            });
+        } else {
+            return new Promise((resolve) => {
+                neogut.showBookStyleEditor(book).then(resolve);
+            });
+        }
+    },
+    showBookStyleEditor: (book) => {
+        return new Promise((resolve) => {
+            $('.tab-item.active').removeClass('active');
+            $('.tab-item[data-book="' + book + '"][data-chapter=""]').addClass('active');
+
+            $('.nav-group-title.active').removeClass('active');
+            $('.nav-group-title[data-book="' + book + '"]').addClass('active');
+
+            const $editorContainer = $('#editor-container').empty(), opened = neogut.getOpenedChapter(book, null);
+            neogut.loadExtTemplate('editor').then((templates) => {
+                $editorContainer.append(templates[0]());
+
+                const process = (contents) => {
+                    $('#html-preview').parent().hide();//.html(neogut.showdown.makeHtml(contents));
+                    $('#md-editor').parent().css('width', '100%');
+                    neogut.editor = ace.edit("md-editor");
+                    neogut.editor.$blockScrolling = Infinity;
+
+                    if (localStorage.getItem('editor-theme')) {
+                        neogut.editor.setTheme(localStorage.getItem('editor-theme'));
+                    }
+                    var scssMode = ace.require("ace/mode/scss").Mode;
+                    neogut.editor.session.setMode(new scssMode());
+                    neogut.editor.setValue(contents, -1);
+                    neogut.getOpenedChapter(book, null).markdown = contents;
+                    neogut.bindBookEvents();
+                    resolve();
+                };
+
+                if (opened && opened.markdown) {
+                    process(opened.markdown);
+                } else {
+                    mainProcess.getBookStyle(book).then(process);
                 }
 
             });
@@ -384,9 +457,9 @@ window.neogut = {
                     $('.toolbar-footer > .title').text(progress);
                 }).then((state) => {
                     if (state) {
-                        smalltalk.alert('Success', 'The ebooks was generated succesfuly.');
+                        smalltalk.alert('Success', 'The ebooks were generated successfully.');
                     } else {
-                        smalltalk.alert('Failure', 'The ebooks were not generated succesfuly.');
+                        smalltalk.alert('Failure', 'The ebooks were not generated successfully.');
                     }
                 });
             } else {
@@ -442,7 +515,26 @@ window.neogut = {
                 const modalBody = $modal.find('.modal-body');
                 neogut.loadExtTemplate('book-settings').then((templates) => {
                     modalBody.html(templates[0]());
-
+                    $('#btn-style-book').off('click').on('click', (e) => {
+                        e.preventDefault();
+                        $modal.on('hidden.bs.modal', () => {
+                            neogut.openBookStyle(book);
+                        });
+                        $modal.modal('hide');
+                    });
+                    $('#btn-delete-book').off('click').on('click', (e) => {
+                        e.preventDefault();
+                        smalltalk.confirm('Are you sure?', 'If you click ok, the book "' + book + '" will be deleted and unrecoverable.').then(() => {
+                            mainProcess.deleteBook(book).then((res) => {
+                                if (res)
+                                    smalltalk.alert('Error', res);
+                                $modal.on('hidden.bs.modal', () => {
+                                    neogut.bindAllBooks().then(neogut.bindBookEvents);
+                                });
+                                $modal.modal('hide');
+                            });
+                        });
+                    });
                     mainProcess.getBookFonts(book).then((fonts) => {
                         fonts.forEach((font) => {
                             modalBody.find('.checkbox.ff-' + font + ' input').attr('checked', true);
@@ -478,6 +570,22 @@ window.neogut = {
                 ]
             }).then(($modal) => {
                 const modalBody = $modal.find('.modal-body');
+                neogut.loadExtTemplate('chapter-settings').then((templates) => {
+                    modalBody.html(templates[0]());
+                    $('#btn-delete-chapter').off('click').on('click', (e) => {
+                        e.preventDefault();
+                        smalltalk.confirm('Are you sure?', 'If you click ok, the chapter "' + book + ' - ' + chapter + '" will be deleted and unrecoverable.').then(() => {
+                            mainProcess.deleteChapter(book, chapter).then((res) => {
+                                if (res)
+                                    smalltalk.alert('Error', res);
+                                $modal.on('hidden.bs.modal', () => {
+                                    neogut.bindAllBooks().then(neogut.bindBookEvents);
+                                });
+                                $modal.modal('hide');
+                            });
+                        });
+                    });
+                });
 
             });
         });
