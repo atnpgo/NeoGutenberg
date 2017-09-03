@@ -1,0 +1,7 @@
+{
+"version": 3,
+"mappings": "AAAA,GAAI,CACA,SAAS,CAAE,IAAI,CAGnB,KAAM,CACF,KAAK,CAAE,IAAI",
+"sources": ["../scss/book.scss"],
+"names": [],
+"file": "book.css"
+}

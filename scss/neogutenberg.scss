@@ -190,7 +190,14 @@ $close-font-size: 1rem;
     z-index: 9999;
 }
 
-
 .ui-droppable-hover {
     border-bottom: 1px solid $border-color;
+}
+
+img {
+    max-width: 100%;
+}
+
+table {
+    width: 100%;
 }

@@ -518,12 +518,33 @@ window.neogut = {
                 const modalBody = $modal.find('.modal-body');
                 neogut.loadExtTemplate('book-settings').then((templates) => {
                     modalBody.html(templates[0]());
+                    mainProcess.getCover(book).then((path) => {
+                        if (path) {
+                            modalBody.find('img').attr('src', 'data:image/png;base64,' + path);
+                        }
+                    });
                     $('#btn-style-book').off('click').on('click', (e) => {
                         e.preventDefault();
                         $modal.on('hidden.bs.modal', () => {
                             neogut.openBookStyle(book);
                         });
                         $modal.modal('hide');
+                    });
+                    $('#btn-set-cover').off('click').on('click', (e) => {
+                        e.preventDefault();
+                        mainProcess.setCover(book).then(() => {
+                            mainProcess.getCover(book).then((path) => {
+                                if (path) {
+                                    modalBody.find('img').attr('src', 'data:image/png;base64,' + path);
+                                }
+                            });
+                        });
+                    });
+                    $('#btn-delete-cover').off('click').on('click', (e) => {
+                        e.preventDefault();
+                        mainProcess.deleteCover(book).then(() => {
+                            modalBody.find('img').attr('src', '');
+                        });
                     });
                     $('#btn-delete-book').off('click').on('click', (e) => {
                         e.preventDefault();

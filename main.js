@@ -52,7 +52,7 @@ const neogut = {
                 height: 600,
                 'min-width': 800,
                 'min-height': 600,
-                icon:'./logo/logo.png',
+                icon: './logo/logo.png',
                 'accept-first-mouse': true,
                 'title-bar-style': 'hidden'
             });
@@ -267,59 +267,65 @@ alert(s);
                     fs.readFile(scssPath, 'UTF-8', (err, contents) => {
                         if (err)
                             console.log(err);
-                        fs.writeFile(tempScssPath, fontStyles.join('') + contents, 'UTF-8', (err) => {
+                        fs.writeFile(tempScssPath, fontStyles.join('') 
+                                + fs.readFileSync(path.join(path.join(__dirname, 'scss'), 'book.scss'), 'UTF-8') 
+                                + contents, 'UTF-8', (err) => {
                             if (err)
                                 console.log(err);
-                            compile(tempScssPath, (css) => {
-                                if (css.status !== 0) {
-                                    progressCallback('Errors generating styles');
-                                    resolve(false);
-                                    return;
-                                }
-                                fs.unlink(tempScssPath, () => {
-                                });
-                                progressCallback("Building ePub");
-                                const outPath = dialog.showOpenDialog({
-                                    title: 'Select output folder',
-                                    properties: ['openDirectory', 'createDirectory']
-                                });
-                                const epubPath = path.join(outPath[0], book + '.epub');
-                                const mobiPath = path.join(outPath[0], book + '.mobi');
-                                const options = {
-                                    output: epubPath,
-                                    title: book,
-                                    content,
-                                    fonts,
-                                    css: css.text,
-                                    author: '',
-                                    publisher: 'NeoGutenberg',
-                                    appendChapterTitles: false
-                                };
-
-                                if (typeof authorName === 'string') {
-                                    options.author = authorName;
-                                }
-
-                                if (fs.existsSync(coverPath)) {
-                                    options.cover = coverPath;
-                                }
-
-                                new Epub(options).promise.then(function () {
-                                    progressCallback("Building mobi");
-                                    kindlegen(fs.readFileSync(epubPath), (error, mobi) => {
-                                        fs.writeFile(mobiPath, mobi, (err) => {
-                                            if (err) {
-                                                progressCallback(err);
-                                                resolve(false);
-                                            } else {
-                                                progressCallback("Ebooks Generated Successfully!");
-                                                resolve(true);
-                                            }
-                                        });
+                            compile.Sass.options({
+                                style: compile.Sass.style.compressed
+                            }, () => {
+                                compile(tempScssPath, (css) => {
+                                    if (css.status !== 0) {
+                                        progressCallback('Errors generating styles');
+                                        resolve(false);
+                                        return;
+                                    }
+                                    fs.unlink(tempScssPath, () => {
                                     });
-                                }, (err) => {
-                                    progressCallback("Failed to generate epub because of " + err);
-                                    resolve(false);
+                                    progressCallback("Building ePub");
+                                    const outPath = dialog.showOpenDialog({
+                                        title: 'Select output folder',
+                                        properties: ['openDirectory', 'createDirectory']
+                                    });
+                                    const epubPath = path.join(outPath[0], book + '.epub');
+                                    const mobiPath = path.join(outPath[0], book + '.mobi');
+                                    const options = {
+                                        output: epubPath,
+                                        title: book,
+                                        content,
+                                        fonts,
+                                        css: css.text,
+                                        author: '',
+                                        publisher: 'NeoGutenberg',
+                                        appendChapterTitles: false
+                                    };
+
+                                    if (typeof authorName === 'string') {
+                                        options.author = authorName;
+                                    }
+
+                                    if (fs.existsSync(coverPath)) {
+                                        options.cover = coverPath;
+                                    }
+
+                                    new Epub(options).promise.then(function () {
+                                        progressCallback("Building mobi");
+                                        kindlegen(fs.readFileSync(epubPath), (error, mobi) => {
+                                            fs.writeFile(mobiPath, mobi, (err) => {
+                                                if (err) {
+                                                    progressCallback(err);
+                                                    resolve(false);
+                                                } else {
+                                                    progressCallback("Ebooks Generated Successfully!");
+                                                    resolve(true);
+                                                }
+                                            });
+                                        });
+                                    }, (err) => {
+                                        progressCallback("Failed to generate epub because of " + err);
+                                        resolve(false);
+                                    });
                                 });
                             });
                         });
@@ -565,6 +571,40 @@ FONTS:
 
 
 
+    },
+    setCover: (book) => {
+        return new Promise((resolve) => {
+            const coverPath = dialog.showOpenDialog({
+                title: 'Select new book cover',
+                properties: ['openFile'],
+                filters: {
+                    filters: [
+                        {name: 'Images', extensions: ['jpg', 'png', 'gif']}
+                    ]
+                }
+            });
+            if (coverPath && coverPath.length > 0) {
+                fs.copy(coverPath[0], path.join(path.join(path.join(neogut.basePath, book), '_assets'), 'cover.jpg')).then(resolve);
+            } else {
+                resolve()
+            }
+        });
+    },
+    deleteCover: (book) => {
+        return new Promise((resolve) => {
+            fs.unlink(path.join(path.join(path.join(neogut.basePath, book), '_assets'), 'cover.jpg'), resolve);
+        });
+    },
+    getCover: (book) => {
+        return new Promise((resolve) => {
+            const coverPath = path.join(path.join(path.join(neogut.basePath, book), '_assets'), 'cover.jpg');
+
+            if (fs.existsSync(coverPath)) {
+                resolve(Buffer(fs.readFileSync(coverPath)).toString('base64'));
+            } else {
+                resolve(false);
+            }
+        });
     }
 };
 
@@ -599,6 +639,9 @@ exports.deleteBook = neogut.deleteBook;
 exports.deleteChapter = neogut.deleteChapter;
 exports.getBookStyle = neogut.getBookStyle;
 exports.moveAfter = neogut.moveAfter;
+exports.setCover = neogut.setCover;
+exports.deleteCover = neogut.deleteCover;
+exports.getCover = neogut.getCover;
 
 
 
