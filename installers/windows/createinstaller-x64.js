@@ -19,9 +19,9 @@ function getInstallerConfig() {
         appDirectory: path.join(outPath, 'NeoGutenberg-win32-x64/'),
         authors: 'Etienne Pageau',
         noMsi: true,
-        outputDirectory: path.join(outPath, 'windows-installer'),
+        outputDirectory: path.join(rootPath, 'dist'),
         exe: 'NeoGutenberg.exe',
-        setupExe: 'NeogutenbergInstaller.x64.exe',
+        setupExe: 'NeoGutenbergInstaller.x64.exe',
         setupIcon: path.join(rootPath, 'logo', 'logo.ico')
     });
 }

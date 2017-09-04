@@ -123,7 +123,7 @@ Strikethrough uses two tildes. ~~Scratch this.~~
 
 # Images
                     
-You may point images to external hosts or pasted them in the editor window.
+You may point images to external hosts, drag and drop image files here or paste images directly in the editor window.
 
 ![alt text](https://atnpgo.github.io/NeoGutenberg/logo/logo.svg)
 
@@ -270,7 +270,7 @@ alert(s);
                         if (err)
                             console.log(err);
                         fs.writeFile(tempScssPath, fontStyles.join('')
-                                + fs.readFileSync(path.join(path.join(__dirname, 'scss'), 'book.scss'), 'UTF-8')
+                                + fs.readFileSync(path.join(__dirname, 'scss', 'book.scss'), 'UTF-8')
                                 + contents, 'UTF-8', (err) => {
                             if (err)
                                 console.log(err);
@@ -369,14 +369,14 @@ alert(s);
     },
     getChapter: (book, chapter) => {
         return new Promise((resolve) => {
-            fs.readFile(path.join(path.join(neogut.basePath, book), chapter), 'UTF-8', (err, contents) => {
+            fs.readFile(path.join(neogut.basePath, book, chapter), 'UTF-8', (err, contents) => {
                 resolve(contents);
             });
         });
     },
     getBookStyle: (book) => {
         return new Promise((resolve) => {
-            fs.readFile(path.join(path.join(path.join(neogut.basePath, book), '_assets'), 'book.scss'), 'UTF-8', (err, contents) => {
+            fs.readFile(path.join(neogut.basePath, book, '_assets', 'book.scss'), 'UTF-8', (err, contents) => {
                 if (err)
                     console.log(err);
                 resolve(contents);
@@ -387,7 +387,7 @@ alert(s);
         return new Promise((resolve) => {
 
             if (chapter === null || chapter.length === 0) {
-                fs.writeFile(path.join(path.join(path.join(neogut.basePath, book), '_assets'), 'book.scss'), contents, 'UTF-8', (err) => {
+                fs.writeFile(path.join(neogut.basePath, book, '_assets', 'book.scss'), contents, 'UTF-8', (err) => {
                     if (err) {
                         resolve(err);
                     } else {
@@ -395,7 +395,7 @@ alert(s);
                     }
                 });
             } else {
-                fs.writeFile(path.join(path.join(neogut.basePath, book), chapter), contents, 'UTF-8', (err) => {
+                fs.writeFile(path.join(neogut.basePath, book, chapter), contents, 'UTF-8', (err) => {
                     if (err) {
                         resolve(err);
                     } else {
@@ -413,7 +413,6 @@ alert(s);
                 const assetsPath = path.join(bookPath, '_assets');
                 fs.mkdirSync(assetsPath);
                 fs.mkdirSync(path.join(assetsPath, 'fonts'));
-                fs.mkdirSync(path.join(assetsPath, 'images'));
                 fs.writeFile(path.join(assetsPath, 'book.scss'),
                         `/*
 STYLES:
@@ -473,13 +472,13 @@ FONTS:
     },
     deleteChapter: (book, chapter) => {
         return new Promise((resolve) => {
-            fs.unlink(path.join(path.join(neogut.basePath, book), chapter)).then(resolve);
+            fs.unlink(path.join(neogut.basePath, book, chapter)).then(resolve);
         });
     },
     getBookFonts: (book) => {
         return new Promise((resolve) => {
             const fonts = [];
-            const fontsPath = path.join(path.join(path.join(neogut.basePath, book), '_assets'), 'fonts');
+            const fontsPath = path.join(neogut.basePath, book, '_assets', 'fonts');
             fs.readdir(fontsPath, (err, files) => {
                 files.forEach((f) => {
                     const chapterPath = path.join(fontsPath, f);
@@ -493,8 +492,8 @@ FONTS:
     },
     addFont: (book, font) => {
         return new Promise((resolve) => {
-            const input = path.join(path.join(__dirname, 'fonts'), font);
-            const output = path.join(path.join(path.join(path.join(neogut.basePath, book), '_assets'), 'fonts'), font);
+            const input = path.join(__dirname, 'fonts', font);
+            const output = path.join(neogut.basePath, book, '_assets', 'fonts', font);
             if (!fs.existsSync(output)) {
                 fs.mkdirSync(output);
             }
@@ -503,7 +502,7 @@ FONTS:
     },
     removeFont: (book, font) => {
         return new Promise((resolve) => {
-            const fontPath = path.join(path.join(path.join(path.join(neogut.basePath, book), '_assets'), 'fonts'), font);
+            const fontPath = path.join(neogut.basePath, book, '_assets', 'fonts', font);
             fs.emptyDir(fontPath).then(() => {
                 fs.rmdir(fontPath).then(resolve);
             });
@@ -574,10 +573,6 @@ FONTS:
 
             });
         });
-
-
-
-
     },
     setCover: (book) => {
         return new Promise((resolve) => {
@@ -591,7 +586,7 @@ FONTS:
                 }
             });
             if (coverPath && coverPath.length > 0) {
-                fs.copy(coverPath[0], path.join(path.join(path.join(neogut.basePath, book), '_assets'), 'cover.jpg')).then(resolve);
+                fs.copy(coverPath[0], path.join(neogut.basePath, book, '_assets', 'cover.jpg')).then(resolve);
             } else {
                 resolve()
             }
@@ -599,13 +594,12 @@ FONTS:
     },
     deleteCover: (book) => {
         return new Promise((resolve) => {
-            fs.unlink(path.join(path.join(path.join(neogut.basePath, book), '_assets'), 'cover.jpg'), resolve);
+            fs.unlink(path.join(neogut.basePath, book, '_assets', 'cover.jpg'), resolve);
         });
     },
     getCover: (book) => {
         return new Promise((resolve) => {
-            const coverPath = path.join(path.join(path.join(neogut.basePath, book), '_assets'), 'cover.jpg');
-
+            const coverPath = path.join(neogut.basePath, book, '_assets', 'cover.jpg');
             if (fs.existsSync(coverPath)) {
                 resolve(Buffer(fs.readFileSync(coverPath)).toString('base64'));
             } else {

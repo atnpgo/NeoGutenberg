@@ -9,7 +9,10 @@
     "package-mac": "electron-packager . --overwrite --platform=darwin --arch=all --icon=logo/logo.icns --prune=true --out=release-builds",
     "package-win": "electron-packager . --overwrite --asar=true --platform=win32 --arch=all --icon=logo/logo.ico --prune=true --out=release-builds --version-string.CompanyName=CE --version-string.FileDescription=CE --version-string.ProductName=\"NeoGutenberg\"",
     "package-linux": "electron-packager . --overwrite --platform=linux --arch=all --icon=logo/logo.512.png --prune=true --out=release-builds",
-    "create-installer-mac": "electron-installer-dmg ./release-builds/NeoGutenberg-darwin-x64/NeoGutenberg.app NeoGutenberg --out=release-builds --overwrite --icon=logo/logo.icns"
+    "create-installer-mac": "electron-installer-dmg ./release-builds/NeoGutenberg-darwin-x64/NeoGutenberg.app NeoGutenberg --out=dist --overwrite --icon=logo/logo.icns",
+    "create-installer-win-x64": "node installers/windows/createinstaller-x64.js",
+    "create-installer-win-ia32": "node installers/windows/createinstaller-ia32.js"
+
   },
   "repository": "https://github.com/atnpgo/NeoGutenberg",
   "keywords": [

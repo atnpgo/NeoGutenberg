@@ -516,6 +516,48 @@ window.neogut = {
 
 
         }, false);
+        
+        $('body').on("dragover", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            $(e.currentTarget).addClass('dragging');
+        }).on("dragleave", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            $(e.currentTarget).removeClass('dragging');
+        }).on("drop", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            // If dropped items aren't files, reject them
+            var dt = e.originalEvent.dataTransfer;
+            if (dt.items) {
+                // Use DataTransferItemList interface to access the file(s)
+                for (var i = 0; i < dt.items.length; i++) {
+                    if (dt.items[i].kind === "file") {
+                        const blob = dt.items[i].getAsFile();
+                        const reader = new window.FileReader();
+                        reader.onloadend = () => {
+                            if (neogut.editor) {
+                                neogut.editor.session.insert(neogut.editor.getCursorPosition(), '![pasted image](' + reader.result + ')');
+                            }
+                        }
+                        reader.readAsDataURL(blob);
+                    }
+                }
+            } else {
+                // Use DataTransfer interface to access the file(s)
+                for (var i = 0; i < dt.files.length; i++) {
+                    const reader = new window.FileReader();
+                    reader.onloadend = () => {
+                        if (neogut.editor) {
+                            neogut.editor.session.insert(neogut.editor.getCursorPosition(), '![pasted image](' + reader.result + ')');
+                        }
+                    }
+                    reader.readAsDataURL(dt.files[i]);
+                }
+            }
+        });
+
 
         neogut.bindBookEvents();
     },

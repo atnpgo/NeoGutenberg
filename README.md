@@ -13,4 +13,8 @@ NeoGutenberg is a free ebook redaction tool. The author simply writes markdown, 
 * Outputs to ePub and mobi
 * Add a custom style to your books using scss
 * More coming soon...
+* Free
+* Themeable editor
+* Cross-Platform
 
+For more information, please visit the [NeoGutenberg website](https://atnpgo.github.io/NeoGutenberg/)
