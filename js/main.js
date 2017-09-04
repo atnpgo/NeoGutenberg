@@ -22,8 +22,7 @@ function getOS() {
 }
 
 $(document).ready(function (e) {
-
-    $('btn-download-now').click(function () {
+    $('#btn-download-now').click(function () {
         var distFolder = 'https://raw.githubusercontent.com/atnpgo/NeoGutenberg/master/dist/';
         switch (getOS()) {
             case 'Windows':
