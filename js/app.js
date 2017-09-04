@@ -469,7 +469,6 @@ window.neogut = {
                 smalltalk.alert('Please select a book.', 'You may select a book by clicking its name in the sidebar.');
             }
         });
-
         $('#btn-open-settings').off('click').on('click', () => {
             neogut.getModal({
                 title: 'Settings'
@@ -491,6 +490,32 @@ window.neogut = {
 
             });
         });
+
+        document.addEventListener('paste', (e) => {
+            if (e.clipboardData) {
+                var items = e.clipboardData.items;
+                if (!items)
+                    return;
+
+                //access data directly
+                for (var i = 0; i < items.length; i++) {
+                    if (items[i].type.indexOf("image") !== -1) {
+                        //image
+                        const blob = items[i].getAsFile();
+                        const reader = new window.FileReader();
+                        reader.onloadend = () => {
+                            if (neogut.editor) {
+                                neogut.editor.session.insert(neogut.editor.getCursorPosition(), '![pasted image](' + reader.result + ')');
+                            }
+                        }
+                        reader.readAsDataURL(blob);
+                    }
+                }
+                e.preventDefault();
+            }
+
+
+        }, false);
 
         neogut.bindBookEvents();
     },
@@ -546,6 +571,22 @@ window.neogut = {
                             modalBody.find('img').attr('src', '');
                         });
                     });
+                    $('#btn-rename-book').off('click').on('click', (e) => {
+                        e.preventDefault();
+                        smalltalk.prompt('Rename', 'Please enter the new book name', book).then((value) => {
+                            if (value && value.trim().length > 0) {
+                                mainProcess.renameBook(book, value).then((err) => {
+                                    if (err) {
+                                        console.log(err);
+                                    }
+                                    $modal.on('hidden.bs.modal', () => {
+                                        neogut.bindAllBooks().then(neogut.bindBookEvents);
+                                    });
+                                    $modal.modal('hide');
+                                });
+                            }
+                        });
+                    });
                     $('#btn-delete-book').off('click').on('click', (e) => {
                         e.preventDefault();
                         smalltalk.confirm('Are you sure?', 'If you click ok, the book "' + book + '" will be deleted and unrecoverable.').then(() => {
@@ -596,6 +637,22 @@ window.neogut = {
                 const modalBody = $modal.find('.modal-body');
                 neogut.loadExtTemplate('chapter-settings').then((templates) => {
                     modalBody.html(templates[0]());
+                    $('#btn-rename-chapter').off('click').on('click', (e) => {
+                        e.preventDefault();
+                        smalltalk.prompt('Rename', 'Please enter the new chapter name', chapter.substring(chapter.indexOf('.') + 2, chapter.length - 3)).then((value) => {
+                            if (value && value.trim().length > 0) {
+                                mainProcess.renameChapter(book, chapter, value).then(() => {
+                                    $modal.on('hidden.bs.modal', (err) => {
+                                        if (err) {
+                                            console.log(err);
+                                        }
+                                        neogut.bindAllBooks().then(neogut.bindBookEvents);
+                                    });
+                                    $modal.modal('hide');
+                                });
+                            }
+                        });
+                    });
                     $('#btn-delete-chapter').off('click').on('click', (e) => {
                         e.preventDefault();
                         smalltalk.confirm('Are you sure?', 'If you click ok, the chapter "' + book + ' - ' + chapter + '" will be deleted and unrecoverable.').then(() => {
@@ -644,8 +701,8 @@ window.neogut = {
             });
         }
 
-        let source =
-                $('.chapter').each((i, item) => {
+        let source;
+        $('.chapter').each((i, item) => {
             const $this = $(item), book = $this.data('book');
             $this.draggable({
                 helper: 'clone',

@@ -122,8 +122,10 @@ Strikethrough uses two tildes. ~~Scratch this.~~
 # Links
 
 # Images
-![alt text](https://raw.githubusercontent.com/atnpgo/NeoGutenberg/master/logo/logo.svg)
+                    
+You may point images to external hosts or pasted them in the editor window.
 
+![alt text](https://atnpgo.github.io/NeoGutenberg/logo/logo.svg)
 
 # Tables
 
@@ -267,8 +269,8 @@ alert(s);
                     fs.readFile(scssPath, 'UTF-8', (err, contents) => {
                         if (err)
                             console.log(err);
-                        fs.writeFile(tempScssPath, fontStyles.join('') 
-                                + fs.readFileSync(path.join(path.join(__dirname, 'scss'), 'book.scss'), 'UTF-8') 
+                        fs.writeFile(tempScssPath, fontStyles.join('')
+                                + fs.readFileSync(path.join(path.join(__dirname, 'scss'), 'book.scss'), 'UTF-8')
                                 + contents, 'UTF-8', (err) => {
                             if (err)
                                 console.log(err);
@@ -288,44 +290,49 @@ alert(s);
                                         title: 'Select output folder',
                                         properties: ['openDirectory', 'createDirectory']
                                     });
-                                    const epubPath = path.join(outPath[0], book + '.epub');
-                                    const mobiPath = path.join(outPath[0], book + '.mobi');
-                                    const options = {
-                                        output: epubPath,
-                                        title: book,
-                                        content,
-                                        fonts,
-                                        css: css.text,
-                                        author: '',
-                                        publisher: 'NeoGutenberg',
-                                        appendChapterTitles: false
-                                    };
+                                    if (options.length > 0) {
+                                        const epubPath = path.join(outPath[0], book + '.epub');
+                                        const mobiPath = path.join(outPath[0], book + '.mobi');
+                                        const options = {
+                                            output: epubPath,
+                                            title: book,
+                                            content,
+                                            fonts,
+                                            css: css.text,
+                                            author: '',
+                                            publisher: 'NeoGutenberg',
+                                            appendChapterTitles: false
+                                        };
 
-                                    if (typeof authorName === 'string') {
-                                        options.author = authorName;
-                                    }
+                                        if (typeof authorName === 'string') {
+                                            options.author = authorName;
+                                        }
 
-                                    if (fs.existsSync(coverPath)) {
-                                        options.cover = coverPath;
-                                    }
+                                        if (fs.existsSync(coverPath)) {
+                                            options.cover = coverPath;
+                                        }
 
-                                    new Epub(options).promise.then(function () {
-                                        progressCallback("Building mobi");
-                                        kindlegen(fs.readFileSync(epubPath), (error, mobi) => {
-                                            fs.writeFile(mobiPath, mobi, (err) => {
-                                                if (err) {
-                                                    progressCallback(err);
-                                                    resolve(false);
-                                                } else {
-                                                    progressCallback("Ebooks Generated Successfully!");
-                                                    resolve(true);
-                                                }
+                                        new Epub(options).promise.then(function () {
+                                            progressCallback("Building mobi");
+                                            kindlegen(fs.readFileSync(epubPath), (error, mobi) => {
+                                                fs.writeFile(mobiPath, mobi, (err) => {
+                                                    if (err) {
+                                                        progressCallback(err);
+                                                        resolve(false);
+                                                    } else {
+                                                        progressCallback("Ebooks Generated Successfully!");
+                                                        resolve(true);
+                                                    }
+                                                });
                                             });
+                                        }, (err) => {
+                                            progressCallback("Failed to generate epub because of " + err);
+                                            resolve(false);
                                         });
-                                    }, (err) => {
-                                        progressCallback("Failed to generate epub because of " + err);
+                                    } else {
                                         resolve(false);
-                                    });
+                                    }
+
                                 });
                             });
                         });
@@ -605,6 +612,19 @@ FONTS:
                 resolve(false);
             }
         });
+    },
+    renameBook: (book, newName) => {
+        return new Promise((resolve) => {
+            fs.rename(path.join(neogut.basePath, book), path.join(neogut.basePath, newName), resolve);
+        });
+    },
+    renameChapter: (book, chapter, newName) => {
+        return new Promise((resolve) => {
+            const bookPath = path.join(neogut.basePath, book);
+            const chapterNum = chapter.substring(chapter.indexOf('.'));
+
+            fs.rename(path.join(bookPath, chapter), chapterNum + '. ' + path.join(bookPath, newName) + '.md', resolve);
+        });
     }
 };
 
@@ -642,6 +662,8 @@ exports.moveAfter = neogut.moveAfter;
 exports.setCover = neogut.setCover;
 exports.deleteCover = neogut.deleteCover;
 exports.getCover = neogut.getCover;
+exports.renameBook = neogut.renameBook;
+exports.renameChapter = neogut.renameChapter;
 
 
 
