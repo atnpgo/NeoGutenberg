@@ -68,6 +68,14 @@ _____/\\\\\\\\\_____/\\\\\\\\\\\\\\\__/\\\\\_____/\\\__/\\\\\\\\\\\\\_______/\\\
 .marketing p + h4 {
     margin-top: 1.5rem;
 }
+#btn-download-now {
+    & > span {
+        font-size: 0.66666rem;
+        top: -0.15rem;
+        position: relative;
+    }
+}
+
 
 /* Responsive: Portrait tablets and up */
 @media screen and (min-width: 48em) {
