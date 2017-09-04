@@ -27,9 +27,9 @@ $(document).ready(function (e) {
         switch (getOS()) {
             case 'Windows':
                 if (navigator.userAgent.indexOf('64') !== -1) {
-                    window.location = distFolder + 'NeogutenbergInstaller.ia32.exe';
+                    window.location = distFolder + 'NeoGutenbergInstaller.ia32.exe';
                 } else {
-                    window.location = distFolder + 'NeogutenbergInstaller.x64.exe';
+                    window.location = distFolder + 'NeoGutenbergInstaller.x64.exe';
                 }
                 break;
             case 'Mac OS':
