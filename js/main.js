@@ -33,7 +33,7 @@ $(document).ready(function (e) {
                 }
                 break;
             case 'Mac OS':
-                window.location = distFolder + 'NeoGutenbergInstaller.dmg';
+                window.location = distFolder + 'NeoGutenberg.dmg';
                 break;
             case 'Linux':
                 if (navigator.userAgent.indexOf('64') !== -1) {
