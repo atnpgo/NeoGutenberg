@@ -58,7 +58,7 @@ function resolve(request) {
   return path.normalize(
     path.join(
       // sass.js works in the "/sass/" directory, make that relative to CWD
-      path.dirname(request.previous.replace(/^\/sass\//, '')),
+      path.dirname(request.previous/*.replace(/^\/sass\//, '')*/),
       request.current
     )
   ).replace(/\\/g, '/');

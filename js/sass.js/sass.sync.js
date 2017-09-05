@@ -368,7 +368,7 @@ var Sass = {
   },
 
   _files: {},
-  _path: '/sass/',
+  _path: '/',
 
   FS: FS,
   PATH: PATH,
