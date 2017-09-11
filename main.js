@@ -298,7 +298,7 @@ alert(s);
                                     title: 'Select output folder',
                                     properties: ['openDirectory', 'createDirectory']
                                 });
-                                if (outPath.length > 0) {
+                                if (outPath && outPath.length > 0) {
                                     const epubPath = path.join(outPath[0], book + '.epub');
                                     const mobiPath = path.join(outPath[0], book + '.mobi');
                                     const options = {
@@ -595,7 +595,7 @@ FONTS:
             if (coverPath && coverPath.length > 0) {
                 fs.copy(coverPath[0], path.join(neogut.basePath, book, '_assets', 'cover.jpg')).then(resolve);
             } else {
-                resolve()
+                resolve();
             }
         });
     },
