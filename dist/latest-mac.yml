@@ -1,0 +1,12 @@
+version: 0.1.1
+files:
+  - url: NeoGutenberg-0.1.1-mac.zip
+    sha512: wgUNMwrFaX5BOyns3NRQz49sMdJS55+KSq/Z29HNJEjyTFPGxzXbp4UdW9XQtZFAFFTKsABBFsCuuLqKr0eyeg==
+    size: 69413365
+    blockMapSize: 74332
+  - url: NeoGutenberg-0.1.1.dmg
+    sha512: +kWIcO+8vFiFSaiOGOMPJlHCRdduANmrBmL9a3MotoDMpFH4KJ7Wybf6o3UaBCbeoWyFtAy9ZfmWyquNcumXnQ==
+    size: 72020960
+path: NeoGutenberg-0.1.1-mac.zip
+sha512: wgUNMwrFaX5BOyns3NRQz49sMdJS55+KSq/Z29HNJEjyTFPGxzXbp4UdW9XQtZFAFFTKsABBFsCuuLqKr0eyeg==
+releaseDate: '2019-06-08T16:16:29.714Z'

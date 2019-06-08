@@ -1,0 +1,9 @@
+version: 0.1.1
+files:
+  - url: NeoGutenberg-0.1.1.AppImage
+    sha512: rkEGUkLa9dC9oHCbHjrc3zsrvKXF/z3Z0u59kSLT55n88ibyRlWRpWa3d7nkO+rAtuQzTcZYgxDkM/L6eE7S9A==
+    size: 78953129
+    blockMapSize: 82925
+path: NeoGutenberg-0.1.1.AppImage
+sha512: rkEGUkLa9dC9oHCbHjrc3zsrvKXF/z3Z0u59kSLT55n88ibyRlWRpWa3d7nkO+rAtuQzTcZYgxDkM/L6eE7S9A==
+releaseDate: '2019-06-08T16:16:29.714Z'

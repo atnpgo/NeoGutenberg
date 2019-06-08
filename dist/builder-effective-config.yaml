@@ -1,0 +1,20 @@
+directories:
+  output: dist
+  buildResources: build
+appId: wtf.atnpgo.neogutenberg
+productName: NeoGutenberg
+mac:
+  category: public.app-category.productivity
+  icon: logo/logo.icns
+dmg:
+  icon: logo/logo.icns
+win:
+  icon: logologo.ico
+linux:
+  artifactName: 'NeoGutenberg-${version}.${ext}'
+  icon: img/logo.png
+  target:
+    - AppImage
+  category: Office
+  executableName: NeoGutenberg
+electronVersion: 4.2.4
