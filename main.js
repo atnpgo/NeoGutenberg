@@ -10,14 +10,7 @@
  *          _\///________\///________\///________\///_____\/////__\///_______________\////////////_________\/////_______
  */
 
-/* global __dirname, Promise */
-
-//handle setupevents as quickly as possible
-const setupEvents = require('./installers/setupEvents');
-if (setupEvents.handleSquirrelEvent()) {
-    // squirrel event handled and app will exit in 1000ms, so don't do anything else
-    return;
-}
+/* global */
 
 
 const electron = require('electron');
@@ -27,8 +20,8 @@ const BrowserWindow = electron.BrowserWindow;
 const fs = require('fs-extra');
 const path = require('path');
 const url = require('url');
-const Epub = require("epub-gen");
-const kindlegen = require("kindlegen");
+const Epub = require('epub-gen');
+const kindlegen = require('kindlegen');
 const showdown = require('showdown');
 const compile = require('./js/sass.js/sass.node');
 const _ = require('./js/underscore-1.8.3.min');
@@ -71,17 +64,16 @@ const neogut = {
                 protocol: 'file:',
                 slashes: true
             }));
-            neogut.mainWindow.on('closed', () => {
-                neogut.mainWindow = null;
-            });
+            neogut.mainWindow.on('closed', () => neogut.mainWindow = null);
         };
         if (!fs.existsSync(neogut.basePath)) {
             fs.mkdirSync(neogut.basePath);
-            const book = 'Guide', chapter = '1. Quick Reference';
+            const book = 'Guide';
+            const chapter = '1. Quick Reference';
             neogut.createBook(book).then(() => {
                 neogut.createChapter(book, chapter).then(() => {
                     neogut.saveChapter(book, chapter + '.md',
-                            `Adapted from Adam Pritchard's markdown cheatsheethttps://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet
+                        `Adapted from Adam Pritchard's markdown cheatsheethttps://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet
 
 # H1
 ## H2
@@ -133,7 +125,7 @@ Strikethrough uses two tildes. ~~Scratch this.~~
                     
 You may point images to external hosts, drag and drop image files here or paste images directly in the editor window.
 
-![alt text](https://atnpgo.github.io/NeoGutenberg/logo/logo.svg)
+![alt text](https://atnpgo.wtf/NeoGutenberg/logo/logo.svg)
 
 # Tables
 
@@ -215,213 +207,146 @@ alert(s);
             create();
         }
     },
-    generateBook: (book, authorName, progressCallback) => {
-        return new Promise((resolve) => {
-            const content = [];
-            const bookFolder = path.join(neogut.basePath, book);
-            fs.readdir(bookFolder, (err, files) => {
-                progressCallback("Building content");
+    generateBook: (book, authorName, progressCallback) => new Promise(resolve => {
+        const bookFolder = path.join(neogut.basePath, book);
+        fs.readdir(bookFolder, (err, files) => {
+            progressCallback('Building content');
 
-                const chapters = [];
-                files.forEach((file) => {
-                    const fullPath = path.join(bookFolder, file);
-                    const baseName = path.basename(file, '.md');
-                    if (!fs.lstatSync(fullPath).isDirectory() && !path.basename(file).startsWith('_')) {
-                        chapters.push(file);
+            const content = _.sortBy(
+                files.filter(f => !fs.lstatSync(path.join(bookFolder, f)).isDirectory() && !path.basename(f).startsWith('_')),
+                c => Number.parseInt(c.substring(0, c.indexOf('.')))
+            ).map(f => {
+                const baseName = path.basename(f, '.md');
+                progressCallback('Building Chapter ' + baseName);
+                return {
+                    title: baseName.substring(baseName.indexOf('.') + 2),
+                    data: converter.makeHtml(fs.readFileSync(path.join(bookFolder, f), 'UTF-8'))
+                };
+            });
+
+
+            const assetsFolder = path.join(bookFolder, '_assets');
+            const coverPath = path.join(assetsFolder, 'cover.jpg');
+            const scssPath = path.join(assetsFolder, 'book.scss');
+            const tempScssPath = path.join(assetsFolder, 'temp.scss');
+            const fontsPath = path.join(assetsFolder, 'fonts');
+
+            progressCallback('Parsing fonts');
+            const fonts = [];
+            const sassPromises = [];
+
+
+            fs.readdirSync(fontsPath).forEach(font => {
+                const fontPath = path.join(fontsPath, font);
+                fs.readdirSync(fontPath).forEach(file => {
+                    if (file.endsWith('.ttf')) {
+                        fonts.push(path.join(fontPath, file));
+                    } else if (file.endsWith('.scss')) {
+                        sassPromises.push(new Promise(resolve => fs.readFile(path.join(fontPath, file), 'UTF-8', (err, contents) => {
+                            if (err) {
+                                // eslint-disable-next-line no-console
+                                console.log(err);
+                            }
+                            resolve(contents.replace(/\.\.\/fonts\/.*\//g, './fonts/'));
+                        })));
                     }
                 });
-
-                _.sortBy(chapters, (chapter) => {
-                    return Number.parseInt(chapter.substring(0, chapter.indexOf('.')));
-                }).forEach((file) => {
-                    const fullPath = path.join(bookFolder, file);
-                    const baseName = path.basename(file, '.md');
-                    progressCallback("Building Chapter " + baseName);
-                    content.push({
-                        title: baseName.substring(baseName.indexOf('.') + 2),
-                        data: converter.makeHtml(fs.readFileSync(fullPath, 'UTF-8'))
-                    });
-                });
-
-
-                const assetsFolder = path.join(bookFolder, '_assets');
-                const coverPath = path.join(assetsFolder, 'cover.jpg');
-                const scssPath = path.join(assetsFolder, 'book.scss');
-                const tempScssPath = path.join(assetsFolder, 'temp.scss');
-                const fontsPath = path.join(assetsFolder, 'fonts');
-
-                progressCallback("Parsing fonts");
-                const fonts = [];
-                const sassPromises = [];
-
-
-                fs.readdirSync(fontsPath).forEach((font) => {
-                    const fontPath = path.join(fontsPath, font);
-                    fs.readdirSync(fontPath).forEach((file) => {
-                        if (file.endsWith('.ttf')) {
-                            fonts.push(path.join(fontPath, file));
-                        } else if (file.endsWith('.scss')) {
-                            sassPromises.push(new Promise((resolve) => {
-                                fs.readFile(path.join(fontPath, file), 'UTF-8', (err, contents) => {
-                                    if (err)
-                                        console.log(err);
-                                    resolve(contents.replace(/\.\.\/fonts\/.*\//g, './fonts/'));
-                                });
-                            }));
-                        }
-                    });
-                });
-
-                progressCallback('Generating styles');
-                Promise.all(sassPromises).then((fontStyles) => {
-                    fs.readFile(scssPath, 'UTF-8', (err, contents) => {
-                        if (err)
-                            console.log(err);
-                        if (err)
-                            console.log(err);
-                        compile.Sass.options({
-                            style: compile.Sass.style.compressed
-                        }, () => {
-                            compile.Sass.compile(fontStyles.join('')
-                                    + fs.readFileSync(path.join(__dirname, 'scss', 'book.scss'), 'UTF-8')
-                                    + contents, (css) => {
-                                if (css.status !== 0) {
-                                    progressCallback('Errors generating styles');
-                                    console.log(css);
-                                    resolve(false);
-                                    return;
-                                }
-                                fs.unlink(tempScssPath, () => {
-                                });
-                                progressCallback("Building ePub");
-                                const outPath = dialog.showOpenDialog({
-                                    title: 'Select output folder',
-                                    properties: ['openDirectory', 'createDirectory']
-                                });
-                                if (outPath && outPath.length > 0) {
-                                    const epubPath = path.join(outPath[0], book + '.epub');
-                                    const mobiPath = path.join(outPath[0], book + '.mobi');
-                                    const options = {
-                                        output: epubPath,
-                                        title: book,
-                                        content,
-                                        fonts,
-                                        css: css.text,
-                                        author: '',
-                                        publisher: 'NeoGutenberg',
-                                        appendChapterTitles: false
-                                    };
-
-                                    if (typeof authorName === 'string') {
-                                        options.author = authorName;
-                                    }
-
-                                    if (fs.existsSync(coverPath)) {
-                                        options.cover = coverPath;
-                                    }
-
-                                    new Epub(options).promise.then(function () {
-                                        progressCallback("Building mobi");
-                                        kindlegen(fs.readFileSync(epubPath), (error, mobi) => {
-                                            fs.writeFile(mobiPath, mobi, (err) => {
-                                                if (err) {
-                                                    progressCallback(err);
-                                                    resolve(false);
-                                                } else {
-                                                    progressCallback("Ebooks Generated Successfully!");
-                                                    resolve(true);
-                                                }
-                                            });
-                                        });
-                                    }, (err) => {
-                                        progressCallback("Failed to generate epub because of " + err);
-                                        resolve(false);
-                                    });
-                                } else {
-                                    resolve(false);
-                                }
-
-                            });
-                        });
-                    });
-                });
             });
-        });
-    },
-    listBooks: () => {
-        return new Promise((resolve) => {
-            const books = [];
-            fs.readdir(neogut.basePath, (err, files) => {
-                files.forEach((f) => {
-                    books.push(f);
-                });
-                resolve(books);
-            });
-        });
-    },
-    listChapters: (book) => {
-        return new Promise((resolve) => {
-            const chapters = [];
-            const bookPath = path.join(neogut.basePath, book);
-            fs.readdir(bookPath, (err, files) => {
-                files.forEach((f) => {
-                    const chapterPath = path.join(bookPath, f);
-                    if (!fs.lstatSync(chapterPath).isDirectory() && !path.basename(chapterPath).startsWith('_')) {
-                        chapters.push(f);
-                    }
-                });
-                resolve(chapters);
-            });
-        });
-    },
-    getChapter: (book, chapter) => {
-        return new Promise((resolve) => {
-            fs.readFile(path.join(neogut.basePath, book, chapter), 'UTF-8', (err, contents) => {
-                resolve(contents);
-            });
-        });
-    },
-    getBookStyle: (book) => {
-        return new Promise((resolve) => {
-            fs.readFile(path.join(neogut.basePath, book, '_assets', 'book.scss'), 'UTF-8', (err, contents) => {
-                if (err)
+
+            progressCallback('Generating styles');
+            Promise.all(sassPromises).then(fontStyles => fs.readFile(scssPath, 'UTF-8', (err, contents) => {
+                if (err) {
+                    // eslint-disable-next-line no-console
                     console.log(err);
-                resolve(contents);
-            });
-        });
-    },
-    saveChapter: (book, chapter, contents) => {
-        return new Promise((resolve) => {
+                }
+                const scss = fontStyles.join('') + fs.readFileSync(path.join(__dirname, 'scss', 'book.scss'), 'UTF-8') + contents;
+                compile.Sass.options({style: compile.Sass.style.compressed}, () => compile.Sass.compile(scss, css => {
+                    if (css.status !== 0) {
+                        progressCallback('Errors generating styles');
+                        // eslint-disable-next-line no-console
+                        console.log(css);
+                        resolve(false);
+                        return;
+                    }
+                    fs.unlink(tempScssPath);
+                    progressCallback('Building ePub');
+                    const outPath = dialog.showOpenDialog({
+                        title: 'Select output folder',
+                        properties: ['openDirectory', 'createDirectory']
+                    });
+                    if (outPath && outPath.length > 0) {
+                        const epubPath = path.join(outPath[0], book + '.epub');
+                        const mobiPath = path.join(outPath[0], book + '.mobi');
+                        const options = {
+                            output: epubPath,
+                            title: book,
+                            content,
+                            fonts,
+                            css: css.text,
+                            author: '',
+                            publisher: 'NeoGutenberg',
+                            appendChapterTitles: false
+                        };
 
-            if (chapter === null || chapter.length === 0) {
-                fs.writeFile(path.join(neogut.basePath, book, '_assets', 'book.scss'), contents, 'UTF-8', (err) => {
-                    if (err) {
-                        resolve(err);
+                        if (typeof authorName === 'string') {
+                            options.author = authorName;
+                        }
+
+                        if (fs.existsSync(coverPath)) {
+                            options.cover = coverPath;
+                        }
+
+                        new Epub(options).promise.then(() => {
+                            progressCallback('Building mobi');
+                            kindlegen(fs.readFileSync(epubPath), (error, mobi) => fs.writeFile(mobiPath, mobi, err => {
+                                if (err) {
+                                    progressCallback(err);
+                                    resolve(false);
+                                } else {
+                                    progressCallback('Ebooks Generated Successfully!');
+                                    resolve(true);
+                                }
+                            }));
+                        }, err => {
+                            progressCallback('Failed to generate epub because of ' + err);
+                            resolve(false);
+                        });
                     } else {
-                        resolve(null);
+                        resolve(false);
                     }
-                });
-            } else {
-                fs.writeFile(path.join(neogut.basePath, book, chapter), contents, 'UTF-8', (err) => {
-                    if (err) {
-                        resolve(err);
-                    } else {
-                        resolve(null);
-                    }
-                });
-            }
-        });
-    },
-    createBook: (book) => {
-        return new Promise((resolve) => {
-            const bookPath = path.join(neogut.basePath, book);
-            if (!fs.existsSync(bookPath)) {
-                fs.mkdirSync(bookPath);
-                const assetsPath = path.join(bookPath, '_assets');
-                fs.mkdirSync(assetsPath);
-                fs.mkdirSync(path.join(assetsPath, 'fonts'));
-                fs.writeFile(path.join(assetsPath, 'book.scss'),
-                        `/*
+
+                }));
+            }));
+        }, bookFolder);
+    }),
+    listBooks: () => new Promise(resolve => fs.readdir(neogut.basePath, (err, files) => resolve(files))),
+    listChapters: book => new Promise(r => {
+        const bookPath = path.join(neogut.basePath, book);
+        fs.readdir(bookPath, (err, files) => r(files.filter(f => {
+            const chapterPath = path.join(bookPath, f);
+            return !fs.lstatSync(chapterPath).isDirectory() && !path.basename(chapterPath).startsWith('_');
+        })));
+    }),
+    getChapter: (book, chapter) => new Promise(r => fs.readFile(path.join(neogut.basePath, book, chapter), 'UTF-8', (err, contents) => r(contents))),
+    getBookStyle: book => new Promise(r => fs.readFile(path.join(neogut.basePath, book, '_assets', 'book.scss'), 'UTF-8', (err, contents) => r(contents))),
+    saveChapter: (book, ch, con) => new Promise(r => fs.writeFile(
+        (ch === null || ch.length === 0) ?
+            path.join(neogut.basePath, book, '_assets', 'book.scss') :
+            path.join(neogut.basePath, book, ch),
+        con, 'UTF-8', r)
+    ),
+    createBook: book => new Promise(r => {
+        const bookPath = path.join(neogut.basePath, book);
+        if (fs.existsSync(bookPath)) {
+            r(false);
+            return;
+        }
+        fs.mkdirSync(bookPath);
+        const assetsPath = path.join(bookPath, '_assets');
+        fs.mkdirSync(assetsPath);
+        fs.mkdirSync(path.join(assetsPath, 'fonts'));
+        fs.writeFile(path.join(assetsPath, 'book.scss'),
+            `/*
 STYLES:
     This is the book's stylesheet, in here you may use either CSS or
     SCSS (http://sass-lang.com/guide) to apply custom styles to your generated
@@ -450,185 +375,117 @@ FONTS:
         *  font-name: "1942 Report"; OR @include .ff-1942-report;
         *  font-name: "Special Elite"; OR @include .ff-special-elite;
         *  font-name: "Underwood Champion"; OR @include .ff-underwood-champion;
-*/`, 'UTF-8', () => {
-                    resolve(true);
-                });
-            } else {
-                resolve(false);
-            }
-        });
-    },
-    deleteBook: (book) => {
-        return new Promise((resolve) => {
-            const bookPath = path.join(neogut.basePath, book);
-            fs.emptyDir(bookPath).then(() => {
-                fs.rmdir(bookPath).then(resolve);
-            });
-        });
-    },
-    createChapter: (book, chapter) => {
-        return new Promise((resolve) => {
-            const bookPath = path.join(neogut.basePath, book), chapterPath = path.join(bookPath, chapter);
-            if (!fs.existsSync(chapterPath)) {
-                neogut.saveChapter(book, chapter + '.md', '# ' + chapter.substring(chapter.indexOf('.') + 2) + '\n\n');
-                resolve(true);
-            } else {
-                resolve(false);
-            }
-        });
-    },
-    deleteChapter: (book, chapter) => {
-        return new Promise((resolve) => {
-            fs.unlink(path.join(neogut.basePath, book, chapter)).then(resolve);
-        });
-    },
-    getBookFonts: (book) => {
-        return new Promise((resolve) => {
-            const fonts = [];
-            const fontsPath = path.join(neogut.basePath, book, '_assets', 'fonts');
-            fs.readdir(fontsPath, (err, files) => {
-                files.forEach((f) => {
-                    const chapterPath = path.join(fontsPath, f);
-                    if (fs.lstatSync(chapterPath).isDirectory() && !path.basename(chapterPath).startsWith('_')) {
-                        fonts.push(f);
-                    }
-                });
-                resolve(fonts);
-            });
-        });
-    },
-    addFont: (book, font) => {
-        return new Promise((resolve) => {
-            const input = path.join(__dirname, 'fonts', font);
-            const output = path.join(neogut.basePath, book, '_assets', 'fonts', font);
-            if (!fs.existsSync(output)) {
-                fs.mkdirSync(output);
-            }
-            fs.copy(input, output).then(resolve);
-        });
-    },
-    removeFont: (book, font) => {
-        return new Promise((resolve) => {
-            const fontPath = path.join(neogut.basePath, book, '_assets', 'fonts', font);
-            fs.emptyDir(fontPath).then(() => {
-                fs.rmdir(fontPath).then(resolve);
-            });
-        });
-    },
-    moveAfter: (book, after, toMove) => {
-        return new Promise((resolve) => {
-            const bookPath = path.join(neogut.basePath, book);
-            const afterNumber = Number.parseInt(after.substring(0, after.indexOf('.')));
-            const movedNumber = Number.parseInt(toMove.substring(0, toMove.indexOf('.')));
+*/`, 'UTF-8', () => r(true));
+    }),
+    deleteBook: book => new Promise(r => {
+        const bookPath = path.join(neogut.basePath, book);
+        fs.emptyDir(bookPath).then(() => fs.rmdir(bookPath).then(r));
+    }),
+    createChapter: (book, chapter) => new Promise(resolve => {
+        if (!fs.existsSync(path.join(neogut.basePath, book, chapter))) {
+            neogut.saveChapter(book, chapter + '.md', '# ' + chapter.substring(chapter.indexOf('.') + 2) + '\n\n');
+            resolve(true);
+        } else {
+            resolve(false);
+        }
+    }),
+    deleteChapter: (book, chapter) => new Promise(r => fs.unlink(path.join(neogut.basePath, book, chapter)).then(r)),
+    getBookFonts: book => new Promise(resolve => {
+        const fontsPath = path.join(neogut.basePath, book, '_assets', 'fonts');
+        fs.readdir(fontsPath, (err, files) => resolve(files.filter(f => {
+            const chapterPath = path.join(fontsPath, f);
+            return fs.lstatSync(chapterPath).isDirectory() && !path.basename(chapterPath).startsWith('_');
+        })));
+    }),
+    addFont: (book, font) => new Promise(resolve => {
+        const output = path.join(neogut.basePath, book, '_assets', 'fonts', font);
+        if (!fs.existsSync(output)) {
+            fs.mkdirSync(output);
+        }
+        fs.copy(path.join(__dirname, 'fonts', font), output).then(resolve);
+    }),
+    removeFont: (book, font) => new Promise(resolve => {
+        const fontPath = path.join(neogut.basePath, book, '_assets', 'fonts', font);
+        fs.emptyDir(fontPath).then(() => fs.rmdir(fontPath).then(resolve));
+    }),
+    moveAfter: (book, after, toMove) => new Promise(resolve => {
+        const bookPath = path.join(neogut.basePath, book);
+        const afterNumber = Number.parseInt(after.substring(0, after.indexOf('.')));
 
-            fs.readdir(bookPath, (err, files) => {
-                const toAugment = [];
-                files.forEach((file) => {
-                    if (!fs.lstatSync(path.join(bookPath, file)).isDirectory() && !path.basename(file).startsWith('_')) {
-                        const chapterNumber = Number.parseInt(file.substring(0, file.indexOf('.')));
-                        if (chapterNumber > afterNumber) {
-                            toAugment.push({
-                                name: file,
-                                number: chapterNumber,
-                                base: file.substring(file.indexOf('0') + 2)
-                            });
-                        }
-                    }
-                });
-                const tightenChapters = () => {
-                    fs.readdir(bookPath, (err, files) => {
-
-                        let chapters = [];
-                        files.forEach((file) => {
-                            if (!fs.lstatSync(path.join(bookPath, file)).isDirectory() && !path.basename(file).startsWith('_')) {
-                                chapters.push(file);
-                            }
-                        });
-                        chapters = _.sortBy(chapters, (chapter) => {
-                            return Number.parseInt(chapter.substring(0, chapter.indexOf('.')));
-                        });
-
-                        const promises = [];
-                        for (let i = 0; i < chapters.length; i++) {
-                            promises.push(new Promise((resolve) => {
-                                const currentName = chapters[i];
-                                const newName = (i + 1) + '. ' + currentName.substring(currentName.indexOf('.') + 2);
-                                if (currentName !== newName) {
-                                    fs.rename(path.join(bookPath, currentName), path.join(bookPath, newName), resolve);
-                                } else {
-                                    resolve();
-                                }
-                            }));
-                        }
-                        Promise.all(promises).then(resolve);
-                    });
-                };
-                const processSingleAugmentation = () => {
-                    if (toAugment.length > 0) {
-                        const currentChapter = toAugment.pop();
-                        fs.rename(path.join(bookPath, currentChapter.name), path.join(bookPath, (currentChapter.number + 1) + currentChapter.base), (err) => {
-                            processSingleAugmentation();
-                        });
-                    } else {
-                        fs.rename(path.join(bookPath, toMove), path.join(bookPath, (afterNumber + 1) + toMove.substring(toMove.indexOf('0') + 2)), (err) => {
-                            tightenChapters();
-                        });
-                    }
-                };
-                processSingleAugmentation();
+        fs.readdir(bookPath, (err, files) => {
+            const toAugment = files
+                .map(f => ({
+                    name: f,
+                    number: Number.parseInt(f.substring(0, f.indexOf('.'))),
+                    base: f.substring(f.indexOf('0') + 2)
+                }))
+                .filter(f =>
+                    !fs.lstatSync(path.join(bookPath, f.name)).isDirectory()
+                    && !path.basename(f.name).startsWith('_')
+                    && f.number > afterNumber
+                )
+            ;
 
 
-            });
-        });
-    },
-    setCover: (book) => {
-        return new Promise((resolve) => {
-            const coverPath = dialog.showOpenDialog({
-                title: 'Select new book cover',
-                properties: ['openFile'],
-                filters: {
-                    filters: [
-                        {name: 'Images', extensions: ['jpg', 'png', 'gif']}
-                    ]
+            const processSingleAugmentation = () => {
+                if (toAugment.length > 0) {
+                    const currentChapter = toAugment.pop();
+                    fs.rename(path.join(bookPath, currentChapter.name), path.join(bookPath, (currentChapter.number + 1) + currentChapter.base), processSingleAugmentation);
+                } else {
+                    fs.rename(
+                        path.join(bookPath, toMove),
+                        path.join(bookPath, (afterNumber + 1) + toMove.substring(toMove.indexOf('0') + 2)),
+                        // callback
+                        () => fs.readdir(bookPath, (err, files) =>
+                            Promise.all(
+                                _.sortBy(
+                                    files.filter(file => !fs.lstatSync(path.join(bookPath, file)).isDirectory() && !path.basename(file).startsWith('_')),
+                                    chapter => Number.parseInt(chapter.substring(0, chapter.indexOf('.')))
+                                ).map((c, i) => new Promise(resolve => {
+                                    const newName = (i + 1) + '. ' + c.substring(c.indexOf('.') + 2);
+                                    if (c !== newName) {
+                                        fs.rename(path.join(bookPath, c), path.join(bookPath, newName), resolve);
+                                    } else {
+                                        resolve();
+                                    }
+                                }))
+                            ).then(resolve)));
                 }
-            });
-            if (coverPath && coverPath.length > 0) {
-                fs.copy(coverPath[0], path.join(neogut.basePath, book, '_assets', 'cover.jpg')).then(resolve);
-            } else {
-                resolve();
+            };
+            processSingleAugmentation();
+        });
+    }),
+    setCover: book => new Promise(resolve => {
+        const coverPath = dialog.showOpenDialog({
+            title: 'Select new book cover',
+            properties: ['openFile'],
+            filters: {
+                filters: [
+                    {name: 'Images', extensions: ['jpg', 'png', 'gif']}
+                ]
             }
         });
-    },
-    deleteCover: (book) => {
-        return new Promise((resolve) => {
-            fs.unlink(path.join(neogut.basePath, book, '_assets', 'cover.jpg'), resolve);
-        });
-    },
-    getCover: (book) => {
-        return new Promise((resolve) => {
-            const coverPath = path.join(neogut.basePath, book, '_assets', 'cover.jpg');
-            if (fs.existsSync(coverPath)) {
-                resolve(Buffer(fs.readFileSync(coverPath)).toString('base64'));
-            } else {
-                resolve(false);
-            }
-        });
-    },
-    renameBook: (book, newName) => {
-        return new Promise((resolve) => {
-            fs.rename(path.join(neogut.basePath, book), path.join(neogut.basePath, newName), resolve);
-        });
-    },
-    renameChapter: (book, chapter, newName) => {
-        return new Promise((resolve) => {
-            const bookPath = path.join(neogut.basePath, book);
-            const chapterNum = chapter.substring(chapter.indexOf('.'));
-
-            fs.rename(path.join(bookPath, chapter), chapterNum + '. ' + path.join(bookPath, newName) + '.md', resolve);
-        });
-    }
+        if (coverPath && coverPath.length > 0) {
+            fs.copy(coverPath[0], path.join(neogut.basePath, book, '_assets', 'cover.jpg')).then(resolve);
+        } else {
+            resolve();
+        }
+    }),
+    deleteCover: book => new Promise(r => fs.unlink(path.join(neogut.basePath, book, '_assets', 'cover.jpg'), r)),
+    getCover: book => new Promise(resolve => {
+        const coverPath = path.join(neogut.basePath, book, '_assets', 'cover.jpg');
+        if (fs.existsSync(coverPath)) {
+            resolve(Buffer(fs.readFileSync(coverPath)).toString('base64'));
+        } else {
+            resolve(false);
+        }
+    }),
+    renameBook: (book, newName) => new Promise(r => fs.rename(path.join(neogut.basePath, book), path.join(neogut.basePath, newName), r)),
+    renameChapter: (book, chapter, newName) => new Promise(resolve => {
+        const bookPath = path.join(neogut.basePath, book);
+        fs.rename(path.join(bookPath, chapter), chapter.substring(chapter.indexOf('.')) + '. ' + path.join(bookPath, newName) + '.md', resolve);
+    })
 };
-
 
 app.on('ready', neogut.createWindow);
 
@@ -641,8 +498,8 @@ app.on('window-all-closed', () => {
 });
 
 app.on('activate', () => {
-    if (mainWindow === null) {
-        createWindow();
+    if (neogut.mainWindow === null) {
+        neogut.createWindow();
     }
 });
 
@@ -667,9 +524,6 @@ exports.renameBook = neogut.renameBook;
 exports.renameChapter = neogut.renameChapter;
 
 
-
-
-
 exports.openDevTool = () => {
-    neogut.mainWindow.webContents.openDevTools({mode: 'detach'});
+    //neogut.mainWindow.webContents.openDevTools({mode: 'detach'});
 };

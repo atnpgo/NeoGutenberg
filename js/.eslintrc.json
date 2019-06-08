@@ -1,0 +1,75 @@
+{
+    "env": {
+        "browser": true,
+        "es6": true
+    },
+    "extends": "eslint:recommended",
+    "rules": {
+        "indent": [
+            "error",
+            4,
+            {
+                "SwitchCase": 1
+            }
+        ],
+        "quotes": [
+            "error",
+            "single"
+        ],
+        "semi": [
+            "error",
+            "always"
+        ],
+        "no-invalid-this": [
+            "error"
+        ],
+        "one-var": [
+            "error",
+            "never"
+        ],
+        "no-var": [
+            "error"
+        ],
+        "arrow-parens": [
+            "error",
+            "as-needed"
+        ],
+        "arrow-body-style": [
+            "error",
+            "as-needed"
+        ],
+        "no-multiple-empty-lines": [
+            "error"
+        ],
+        "require-jsdoc": [
+            "error",
+            {
+                "require": {
+                    "FunctionDeclaration": true,
+                    "MethodDefinition": true,
+                    "ClassDeclaration": true,
+                    "ArrowFunctionExpression": false
+                }
+            }
+        ],
+        "valid-jsdoc": [
+            "warn"
+        ],
+        "prefer-arrow-callback": [
+            "error"
+        ],
+        "max-len": [
+            "error",
+            {
+                "code": 180,
+                "ignoreTemplateLiterals": false
+            }
+        ],
+        "no-lonely-if": [
+            "error"
+        ],
+        "curly": [
+            "error"
+        ]
+    }
+}
