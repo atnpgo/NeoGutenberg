@@ -22,7 +22,7 @@ function getOS() {
 
 $(document).ready(function (e) {
     $('#btn-download-now').click(function () {
-        var distFolder = 'dist/';
+        var distFolder = 'https://github.com/atnpgo/NeoGutenberg/releases/download/0.1.1/';
         switch (getOS()) {
             case 'Mac OS':
                 window.location = distFolder + 'NeoGutenberg-0.1.1.dmg';
