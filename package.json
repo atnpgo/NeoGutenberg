@@ -1,7 +1,7 @@
 {
     "name": "neogutenberg",
     "productName": "NeoGutenberg",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "description": "A digital printing press",
     "main": "main.js",
     "scripts": {
@@ -22,15 +22,15 @@
     "author": "ATNPGO",
     "license": "Apache-2.0",
     "devDependencies": {
-        "electron": "4.2.4",
-        "electron-builder": "20.43.0",
-        "eslint": "5.16.0"
+        "electron": "9.1.0",
+        "electron-builder": "22.7.0",
+        "eslint": "7.4.0"
     },
     "dependencies": {
         "epub-gen": "0.1.0",
-        "showdown": "1.9.0",
+        "showdown": "1.9.1",
         "kindlegen": "1.1.0",
-        "fs-extra": "5.0.0"
+        "fs-extra": "9.0.1"
     },
     "build": {
         "appId": "wtf.atnpgo.neogutenberg",
