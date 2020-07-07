@@ -13,7 +13,7 @@ function getOS() {
         os = 'Windows';
     } else if (/Android/.test(userAgent)) {
         os = 'Android';
-    } else if (!os && /Linux/.test(platform)) {
+    } else if (/Linux/.test(platform)) {
         os = 'Linux';
     }
 
@@ -22,27 +22,17 @@ function getOS() {
 
 $(document).ready(function (e) {
     $('#btn-download-now').click(function () {
-        var distFolder = 'https://github.com/atnpgo/NeoGutenberg/releases/download/0.1.1/';
+        var distFolder = 'https://github.com/atnpgo/NeoGutenberg/releases/download/v0.1.2/';
         switch (getOS()) {
             case 'Mac OS':
-                window.location = distFolder + 'NeoGutenberg-0.1.1.dmg';
+                window.location = distFolder + 'NeoGutenberg-0.1.2.dmg';
                 break;
             case 'Linux':
-                if (navigator.userAgent.indexOf('64') !== -1) {
-                    window.location = distFolder + 'NeoGutenberg-0.1.1.AppImage';
-                } else if (navigator.userAgent.indexOf('32') !== -1) {
-                    window.location = distFolder + 'NeoGutenberg-linux-ia32.zip';
-                } else {
-                    window.location = distFolder + 'NeoGutenberg-linux-armv7l.zip';
-                }
+                window.location = distFolder + 'NeoGutenberg-0.1.2.AppImage';
                 break;
             case 'Windows':
             default:
-                if (navigator.userAgent.indexOf('64') !== -1) {
-                    window.location = distFolder + 'NeoGutenbergInstaller.x64.exe';
-                } else {
-                    window.location = distFolder + 'NeoGutenbergInstaller.ia32.exe';
-                }
+                window.location = distFolder + 'NeoGutenberg.Setup.0.1.2.exe';
                 break;
 
         }
