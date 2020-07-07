@@ -22,7 +22,7 @@
     "author": "ATNPGO",
     "license": "Apache-2.0",
     "devDependencies": {
-        "electron": "4.2.4",
+        "electron": "9.1.0",
         "electron-builder": "20.43.0",
         "eslint": "5.16.0"
     },
